@@ -47,10 +47,9 @@ customize `npipenv-keymap-prefix` to whatever works best for you.
 file, i.e. it's hooked to the `python-mode`. You can explicitly
 activate it for buffers in other modes by <kbd>M-x</kbd> <kbd>npipenv-mode</kbd>.
 
-The mode line shows the virtualenv the file the buffer is visiting is
- associated at the time the buffer visited the file. It looks like
- **nP[v:hello_world]** where 'hello_world' is the name of the Pipenv
- project the file belongs to.
+The mode line shows the virtualenv associated with the file. The association usually
+happens when you open a file. The mode line looks like **nP[v:hello_world]**
+where 'hello_world' is the name of the Pipenv project the file belongs to.
 
 Spawn an virtualenv-dedicated inferior python process by <kbd>C-c</kbd> <kbd>'</kbd>
 <kbd>p</kbd> or <kbd>M-x</kbd> <kbd>npipenv-run-python</kbd>. Its buffer name should
