@@ -26,9 +26,9 @@ Some of nPipenv's features:
 
 ## Installation
 
-Ensure you have two pacakges, `f` and `s`, installed in your Emacs
-prior to the nPipenv installation. You can install them from `MELPA`
-or Github.
+Ensure you have two elisp pacakges, `f` and `s`, installed in your Emacs
+prior to the nPipenv installation. You can get them from `MELPA`
+or `Github`.
 
 Place `npipenv.el` on a directory in your `load-path', and add this to
 your Emacs config:
