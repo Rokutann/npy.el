@@ -78,8 +78,8 @@ Spawn a Pipenv shell by <kbd>C-c</kbd> <kbd>'</kbd> <kbd>s</kbd> or <kbd>M-x</kb
 
 ## Caveats
 
-* It will slow down your Emacs startup process significantly when you
-  restore lots of Python sources by desktop-mode.
+* It slows down your Emacs startup process significantly when you
+  restore lots of Python sources with desktop-mode.
 
 ## Known issues
 
