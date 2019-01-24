@@ -4,9 +4,9 @@
 **nPipenv** is a nano (minimalist) support for Pipenv in Emacs. Its
 goal is to provide a nice integration of Pipenv virtual environmens
 and Emacs inferior python mode.  For instance - sending Python code
-chunks from multiple sources in a Pipenv project to a single inferior
-python process for its virtual environment (virtualenv-dedicated
-inferior python process). Also, you can spawn multiple
+chunks from multiple Python sources in a Pipenv project to a single inferior
+python process for its virtual environment (**virtualenv-dedicated
+inferior python process**). Also, you can spawn multiple
 virutalenv-dedicated inferior python processes for multiple Pipenv
 projects from a single Emacs process.
 
@@ -14,9 +14,12 @@ Some of nPipenv's features:
 
 * spawn a virtualenv-dedicated inferior python process
 * spawn multiple virtualenv-dedicated inferior python processes for
-  different Pipenv projects
-* send Python code from multiple sources to the virtualenv-dedicated
-  inferior process for the Pipenv project
+  multiple Pipenv projects
+* send Python code chunks from multiple Python sources in a Pipenv project
+  to the virtualenv-dedicated inferior python process for the project
+* dispatch Python code chunks to the appropriate virtualenv-dedicated inferior
+  python process when you have spawned multiple virtualenv-dedicated inferior
+  python processes for different Pipenv projects
 * change buffer's association to a Pipenv project automatically when
   the file buffer in a Pipenv project gets written out to a directory
   under a differet Pipenv project
