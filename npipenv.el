@@ -4,7 +4,7 @@
 
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
 ;; Keywords: tools, processes
-;; URL: https://github.com/mukuge/npipenv/
+;; URL: https://github.com/mukuge/nPipenv/
 ;; Package-Version: 0.1.0
 ;; Package-Requires: ((emacs "26.1"))
 
@@ -25,9 +25,8 @@
 
 ;;; Commentary:
 
-;; This is a simple global minor mode which will create inferior
-;; Python processes dedicated to Pipenv virtual environments on your
-;; system.
+;; This is a simple minor mode which will create inferior Python
+;; processes dedicated to Pipenv virtual environments on your system.
 
 ;; The `python-mode' has two types of inferior python processes:
 ;; global and buffer-dedicated.  Either of these can't nicely work

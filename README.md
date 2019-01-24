@@ -12,7 +12,6 @@ projects from a single Emacs process.
 
 Some of nPipenv's features:
 
-* spawn a virtualenv-dedicated inferior python process
 * spawn multiple virtualenv-dedicated inferior python processes for
   multiple Pipenv projects
 * send Python code chunks from multiple Python sources in a Pipenv project
@@ -21,7 +20,7 @@ Some of nPipenv's features:
   python process when you have spawned multiple virtualenv-dedicated inferior
   python processes for different Pipenv projects
 * change buffer's association to a Pipenv project automatically when
-  the file buffer in a Pipenv project gets written out to a directory
+  you write out the file buffer to a directory
   under a differet Pipenv project
 * spawn a Pipenv shell for a Pipenv project
 
@@ -46,7 +45,7 @@ customize `npipenv-keymap-prefix` to whatever works best for you.
 
 `nPipenv-mode` is automatically enabled when you open a Python source
 file, i.e. it's hooked to the `python-mode`. You can explicitly
-activate it for buffers in other modes by <kbd>M-x</kbd> <kbd>nPipenv-mode</kbd>.
+activate it for buffers in other modes by <kbd>M-x</kbd> <kbd>npipenv-mode</kbd>.
 
 The mode line shows the virtualenv the file the buffer is visiting is
  associated at the time the buffer visited the file. It looks like
@@ -62,12 +61,13 @@ interaction between the source file(s) and the inferior python mode as
 in `python-mode`.
 
 Note: Originallly, the `python-mode` has two types of inferior python
-processes: global and (buffer-)dedicated. The precedence over for the
+processes: global and (buffer-)dedicated. The precedence order for the
 destination when you send a source code chunk from a source buffer in
 a situation that you have spawned both a global inferior process and a
-dedicated inferior process is 'always dedicated first.' Currently,
-nPipenv's precedence strategy is 'always virtualenv-dedicated
-first'. i.e. virtualenv-dedicated -> buffer-dedicated -> global. I
+dedicated inferior process is 'always dedicated first.' With adding a
+new type, virtualenv-dedicated, the current nPipenv's precedence
+strategy is 'always virtualenv-dedicated
+first'. i.e. virtualenv-dedicated -> buffer-dedicated -> global. We
 might change this in a future release.
 
 If you need to update the association between a file buffer and a
@@ -84,7 +84,7 @@ Spawn a Pipenv shell by <kbd>C-c</kbd> <kbd>'</kbd> <kbd>s</kbd> or <kbd>M-x</kb
 
 ## Known issues
 
-To be availabe in the future.
+To be availabe when posted.
 
 ## Changelog
 
