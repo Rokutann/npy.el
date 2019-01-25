@@ -1,10 +1,10 @@
 
 ## Synopsis
 
-**nPipenv** is a nano (minimalist) support for Pipenv in Emacs. Its
+**nPipenv** is a nano (or minimalist) support for Pipenv in Emacs. Its
 goal is to provide a nice integration of Pipenv virtual environmens
 and Emacs inferior python mode.  For instance - sending Python code
-chunks from multiple Python sources in a Pipenv project to a single inferior
+chunks from multiple Python files in a Pipenv project to a single inferior
 python process for its virtual environment (**virtualenv-dedicated
 inferior python process**). Also, you can spawn multiple
 virutalenv-dedicated inferior python processes for multiple Pipenv
@@ -14,7 +14,7 @@ Some of nPipenv's features:
 
 * spawn multiple virtualenv-dedicated inferior python processes for
   multiple Pipenv projects
-* send Python code chunks from multiple Python sources in a Pipenv project
+* send Python code chunks from multiple Python files in a Pipenv project
   to the virtualenv-dedicated inferior python process for the project
 * dispatch Python code chunks to the appropriate virtualenv-dedicated inferior
   python process when you have spawned multiple virtualenv-dedicated inferior
@@ -43,8 +43,8 @@ customize `npipenv-keymap-prefix` to whatever works best for you.
 
 ### Basic Usage
 
-`nPipenv-mode` is automatically enabled when you open a Python source
-file, i.e. it's hooked to the `python-mode`. You can explicitly
+`nPipenv-mode` is automatically enabled when you open a Python file, i.e.
+it's hooked to the `python-mode`. You can explicitly
 activate it for buffers in other modes by <kbd>M-x</kbd> <kbd>npipenv-mode</kbd>.
 
 The mode line shows the virtualenv associated with the file. The association usually
@@ -61,7 +61,7 @@ in `python-mode`.
 
 Note: Originallly, the `python-mode` has two types of inferior python
 processes: global and (buffer-)dedicated. The precedence order for the
-destination when you send a source code chunk from a source buffer in
+destination when you send a source code chunk from a file buffer in
 a situation that you have spawned both a global inferior process and a
 dedicated inferior process is 'always dedicated first.' With adding a
 new type, virtualenv-dedicated, the current nPipenv's precedence
@@ -79,7 +79,7 @@ Spawn a Pipenv shell by <kbd>C-c</kbd> <kbd>'</kbd> <kbd>s</kbd> or <kbd>M-x</kb
 ## Caveats
 
 * It slows down your Emacs startup process significantly when you
-  restore lots of Python sources with desktop-mode.
+  restore lots of Python files with desktop-mode.
 
 ## Known issues
 
