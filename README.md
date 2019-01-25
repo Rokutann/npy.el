@@ -1,26 +1,27 @@
 
 ## Synopsis
 
-**nPipenv** is a nano (or minimalist) support for Pipenv in Emacs. Its
+**nPipenv** is a nano (or minimalistic) support for Pipenv in Emacs. Its
 goal is to provide a nice integration of Pipenv virtual environmens
-and Emacs inferior python mode.  For instance - sending Python code
-chunks from multiple Python files in a Pipenv project to a single inferior
-python process for its virtual environment (**virtualenv-dedicated
-inferior python process**). Also, you can spawn multiple
-virutalenv-dedicated inferior python processes for multiple Pipenv
-projects from a single Emacs process.
+and Emacs inferior python mode.  For instance - spawning multiple 
+inferior python processes for multiple Pipenv projects, and 
+dispatching Python code chunks sent from a buffer, which is visiting a Python file
+in one of such Pipenv projects, to the inferior python process bound to 
+the same Pipenv project. We call this new type of inferior python processes
+**virtualenv-dedicated inferior python process**. 
+
 
 Some of nPipenv's features:
 
 * spawn multiple virtualenv-dedicated inferior python processes for
   multiple Pipenv projects
-* send Python code chunks from multiple Python files in a Pipenv project
+* send Python code chunks from multiple Python file buffers in a Pipenv project
   to the virtualenv-dedicated inferior python process for the project
 * dispatch Python code chunks to the appropriate virtualenv-dedicated inferior
   python process when you have spawned multiple virtualenv-dedicated inferior
   python processes for different Pipenv projects
 * change buffer's association to a Pipenv project automatically when
-  you write out the file buffer to a directory
+  you write out the content of the file buffer onto a directory
   under a differet Pipenv project
 * spawn a Pipenv shell for a Pipenv project
 
@@ -59,7 +60,7 @@ After that npipenv-mode works transparently: you can use all the
 interaction between the source file(s) and the inferior python mode as
 in `python-mode`.
 
-Note: Originallly, the `python-mode` has two types of inferior python
+Note: The `python-mode` odefines two types of inferior python
 processes: global and (buffer-)dedicated. The precedence order for the
 destination when you send a source code chunk from a file buffer in
 a situation that you have spawned both a global inferior process and a
