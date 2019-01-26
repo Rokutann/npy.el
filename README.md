@@ -13,8 +13,7 @@ the same Pipenv project. We call this new type of inferior python processes
 
 Some of nPipenv's features:
 
-* spawn multiple virtualenv-dedicated inferior python processes for
-  multiple Pipenv projects
+* spawn a virtualenv-dedicated inferior python process for a Pipenv project
 * send Python code chunks from multiple Python file buffers in a Pipenv project
   to the virtualenv-dedicated inferior python process for the project
 * dispatch Python code chunks to the appropriate virtualenv-dedicated inferior
