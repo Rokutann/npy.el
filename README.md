@@ -13,8 +13,7 @@ the same Pipenv project. We call this new type of inferior python processes
 
 Some of nPipenv's features:
 
-* spawn multiple virtualenv-dedicated inferior python processes for
-  multiple Pipenv projects
+* spawn a virtualenv-dedicated inferior python process for a Pipenv project
 * send Python code chunks from multiple Python file buffers in a Pipenv project
   to the virtualenv-dedicated inferior python process for the project
 * dispatch Python code chunks to the appropriate virtualenv-dedicated inferior
@@ -60,7 +59,7 @@ After that npipenv-mode works transparently: you can use all the
 interaction between the source file(s) and the inferior python mode as
 in `python-mode`.
 
-Note: The `python-mode` odefines two types of inferior python
+Note: The `python-mode` defines two types of inferior python
 processes: global and (buffer-)dedicated. The precedence order for the
 destination when you send a source code chunk from a file buffer in
 a situation that you have spawned both a global inferior process and a
