@@ -33,10 +33,10 @@
 ;; with (Pipenv) virtual environments as is.
 
 ;; The `nPipenv-mode' extends `python-mode', introducing
-;; virtulaenv-dedicated infeior Python processes.  You can, for
+;; virtulaenv-dedicated inferior Python processes.  You can, for
 ;; example, send a function definition by `python-shell-send-defun' to
 ;; a single virtualenv-dedicated inferior Python process from multiple
-;; Python files under a same virtual environmet, even when you have
+;; Python files under a same virtual environment, even when you have
 ;; spawned multiple inferior Python processes for different
 ;; virtual environments simultaneously.
 
@@ -61,7 +61,7 @@
 (require 'subr-x)
 
 (defgroup npipenv nil
-  "Nano support for Pipenv venvs"
+  "Nano support for Pipenv virtualenvs."
   :prefix "npipenv-"
   :group 'python)
 
@@ -94,7 +94,7 @@
 
 (defcustom npipenv-shell-mode-buffer-init-command
   "exec pipenv shell"
-  "The shell command to launnch a python interactive mode for a virtualenv."
+  "The shell command to launch a python interactive mode for a virtualenv."
   :type 'string
   :group 'npipenv)
 
@@ -247,25 +247,25 @@ The value should be 'exploring (default), or 'calling."
     (npipenv--make-pipenv-process command filter)))
 
 (defun npipenv--set-pipenv-project-root-by-calling ()
-  "Set the Pipenv project root varirable by calling the pipenv executable."
+  "Set the Pipenv project root variable by calling the pipenv executable."
   (if (null npipenv--pipenv-project-root)
       (npipenv--force-wait (npipenv--get-pipenv-project-root))
     npipenv--pipenv-project-root))
 
 (defun npipenv--set-pipenv-virtualenv-root-by-calling ()
-  "Set the Pipenv virtualenv root varirable by calling the pipenv executable."
+  "Set the Pipenv virtualenv root variable by calling the pipenv executable."
   (if (null npipenv--pipenv-virtualenv-root)
       (npipenv--force-wait (npipenv--get-pipenv-virtualenv-root))
     npipenv--pipenv-virtualenv-root))
 
 (defun npipenv--fill-pipenv-project-root ()
-  "Fill `npipenv--pipenv-project-root' if it's non-nill."
+  "Fill `npipenv--pipenv-project-root' if it's non-nil."
   (if (eql npipenv-pipenv-project-detection 'exploring)
       (npipenv--set-pipenv-project-root-by-exploring)
     (npipenv--set-pipenv-project-root-by-calling)))
 
 (defun npipenv--fill-pipenv-virtualenv-root ()
-  "Fill `npipenv--pipenv-virtualenv-root' if it's non-nill."
+  "Fill `npipenv--pipenv-virtualenv-root' if it's non-nil."
   (npipenv--set-pipenv-virtualenv-root-by-calling))
 
 (defun npipenv--venvpath-to-prjname (venvpath)
@@ -331,7 +331,7 @@ This is for the global minor mode version to come."
   "Disable nPipenv before `desktop-mode' saves configurations.
 
 nPipenv can significantly slow Emacs startup process, when
-`desktop-mode' restores many files.  This is a temporaly workaroud
+`desktop-mode' restores many files.  This is a temporary workaround
 and will be removed in the future release when alternative methods
 to detect Pipenv virtualenvs implemented.
 
@@ -349,7 +349,7 @@ This is for the global minor mode version to come."
          (t (message "Something wrong has happend in nPipenv."))))
 
 (defun npipenv--set-pipenv-project-root-by-exploring ()
-  "Set the Pipenv project root varirable by exploring the directory bottom-up."
+  "Set the Pipenv project root variable by exploring the directory bottom-up."
   (if-let* ((filename (buffer-file-name (current-buffer)))
             (dirname (f-dirname filename))
             (root (npipenv--get-pipenv-project-root-by-exploring dirname)))
@@ -383,7 +383,7 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
     (add-hook 'python-mode-hook 'npipenv-mode)))
 
 (defun npipenv-run-python ()
-  "Run an inferior python shell for a virtulaenv."
+  "Run an inferior python shell for a virtualenv."
   (interactive)
   (npipenv--fill-pipenv-project-root)
   (npipenv--do-it-or-message

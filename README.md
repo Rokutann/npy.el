@@ -2,13 +2,13 @@
 ## Synopsis
 
 **nPipenv** is a nano (or minimalistic) support for Pipenv in Emacs. Its
-goal is to provide a nice integration of Pipenv virtual environmens
-and Emacs inferior python mode.  For instance - spawning multiple 
-inferior python processes for multiple Pipenv projects, and 
+goal is to provide a nice integration of Pipenv virtual environment
+and Emacs inferior python mode.  For instance - spawning multiple
+inferior python processes for multiple Pipenv projects, and
 dispatching Python code chunks sent from a buffer, which is visiting a Python file
-in one of such Pipenv projects, to the inferior python process bound to 
+in one of such Pipenv projects, to the inferior python process bound to
 the same Pipenv project. We call this new type of inferior python processes
-**virtualenv-dedicated inferior python process**. 
+**virtualenv-dedicated inferior python process**.
 
 
 Some of nPipenv's features:
@@ -21,12 +21,12 @@ Some of nPipenv's features:
   python processes for different Pipenv projects
 * change buffer's association to a Pipenv project automatically when
   you write out the content of the file buffer onto a directory
-  under a differet Pipenv project
+  under a different Pipenv project
 * spawn a Pipenv shell for a Pipenv project
 
 ## Installation
 
-Ensure you have two elisp pacakges, `f` and `s`, installed in your Emacs
+Ensure you have two elisp packages, `f` and `s`, installed in your Emacs
 prior to the nPipenv installation. You can get them from `MELPA`
 or `Github`.
 
@@ -73,21 +73,22 @@ If you need to update the association between a file buffer and a
 virtual environment, use the command <kbd>C-c</kbd> <kbd>'</kbd> <kbd>u</kbd> or <kbd>M-x</kbd>
 <kbd>npipenv-update-venv-root</kbd>.
 
+You can change the Pipenv project method by changing `npipenv-pipenv-project-detection`. The default value is `'exploring` which explores the directory structure bottom-up to find a `Pipfile`. Another option is `'calling` which calls `pipenv --where` command. `'calling` is the surest way but slow.
+
 Spawn a Pipenv shell by <kbd>C-c</kbd> <kbd>'</kbd> <kbd>s</kbd> or <kbd>M-x</kbd>
 <kbd>npipenv-shell</kbd>.
 
 ## Caveats
 
-* It slows down your Emacs startup process significantly when you
-  restore lots of Python files with desktop-mode.
+* It slows down your Emacs startup process when you restore lots of Python files with desktop-mode. How slow depends on the project detection mode: `exploring` can be acceptable, 'calling' will be a disaster.
 
 ## Known issues
 
-To be availabe when posted.
+To be available when posted.
 
 ## Changelog
 
-To be availabe at the second release.
+A changelog is available [here](CHANGELOG.md).
 
 ## License
 
