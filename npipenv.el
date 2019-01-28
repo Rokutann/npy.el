@@ -282,14 +282,18 @@ The value should be 'exploring (default), or 'calling."
 Replace it with the inferior process for the project exists, otherwise
 leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
   (npipenv--fill-pipenv-project-root)
-  (if (stringp npipenv--pipenv-project-name) ;; i.e. it's not 'no-virtualenv
-      (let* ((venv-dedicated-buffer-name (format "*%s[v:%s]*" python-shell-buffer-name
-                                                 npipenv--pipenv-project-name))
-             (venv-dedicated-running (comint-check-proc venv-dedicated-buffer-name)))
-        (if venv-dedicated-running
-            venv-dedicated-buffer-name
-          (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
-            res)))
+  (if (stringp npipenv--pipenv-project-name) ;; i.e. it's not 'no-virtualenv nor nil.
+      (if-let* ((venv-dedicated-buffer-process-name (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
+                                                            npipenv--pipenv-project-name
+                                                            (f-filename (buffer-file-name))))
+                (venv-dedicated-process-name (format "*%s[v:%s]*" python-shell-buffer-name
+                                                     npipenv--pipenv-project-name)))
+          (if-let (venv-dedicated-buffer-running (comint-check-proc venv-dedicated-buffer-process-name))
+              venv-dedicated-buffer-process-name
+            (if-let (venv-dedicated-running (comint-check-proc venv-dedicated-process-name))
+                venv-dedicated-process-name
+              (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
+                res))))
     (let ((res (apply orig-fun orig-args)))
       res)))
 
@@ -390,8 +394,14 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
    npipenv--pipenv-project-root
    (let* ((exec-path (cons npipenv--pipenv-project-root exec-path))
           (python-shell-virtualenv-root npipenv--pipenv-project-root)
-          (process-name (format "%s[v:%s]" python-shell-buffer-name
-                                npipenv--pipenv-project-name)))
+          (process-name (if current-prefix-arg
+                            (format "%s[v:%s;b:%s]"
+                                    python-shell-buffer-name
+                                    npipenv--pipenv-project-name
+                                    (f-filename (buffer-file-name)))
+                          (format "%s[v:%s]"
+                                  python-shell-buffer-name
+                                  npipenv--pipenv-project-name))))
      (get-buffer-process
       (python-shell-make-comint (python-shell-calculate-command)
                                 process-name t)))))
