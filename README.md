@@ -73,14 +73,21 @@ If you need to update the association between a file buffer and a
 virtual environment, use the command <kbd>C-c</kbd> <kbd>'</kbd> <kbd>u</kbd> or <kbd>M-x</kbd>
 <kbd>npipenv-update-venv-root</kbd>.
 
-You can change the Pipenv project method by changing `npipenv-pipenv-project-detection`. The default value is `'exploring` which explores the directory structure bottom-up to find a `Pipfile`. Another option is `'calling` which calls `pipenv --where` command. `'calling` is the surest way but slow.
+You can change the Pipenv project method by changing
+`npipenv-pipenv-project-detection`. The default value is `'exploring`
+which explores the directory structure bottom-up to find a
+`Pipfile`. Another option is `'calling` which calls `pipenv --where`
+command. `'calling` is the surest way but slow.
 
 Spawn a Pipenv shell by <kbd>C-c</kbd> <kbd>'</kbd> <kbd>s</kbd> or <kbd>M-x</kbd>
 <kbd>npipenv-shell</kbd>.
 
 ## Caveats
 
-* It slows down your Emacs startup process when you restore lots of Python files with desktop-mode. How slow depends on the project detection mode: `exploring` can be acceptable, 'calling' will be a disaster.
+* It slows down your Emacs startup process when you restore lots of
+  Python files with desktop-mode. How slow depends on the project
+  detection mode: `exploring` can be acceptable, 'calling' will be a
+  disaster.
 
 ## Known issues
 
