@@ -10,7 +10,6 @@ in one of such Pipenv projects, to the inferior python process bound to
 the same Pipenv project. We call this new type of inferior python processes
 **virtualenv-dedicated inferior python process**.
 
-
 Some of nPipenv's features:
 
 * spawn a virtualenv-dedicated inferior python process for a Pipenv project
