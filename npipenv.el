@@ -5,8 +5,8 @@
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
 ;; Keywords: tools, processes
 ;; URL: https://github.com/mukuge/nPipenv/
-;; Package-Version: 0.1.0
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0.1.1
+;; Package-Requires: ((emacs "26.1")(f "0.20.0")(s "1.7.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -40,7 +40,7 @@
 ;; spawned multiple inferior Python processes for different
 ;; virtual environments simultaneously.
 
-;; The main entry points are `npipenv-run-python', which spanws new
+;; The main entry points are `npipenv-run-python', which spawns new
 ;; inferior python process with the virtualenv at the current buffer.
 
 ;; Installation:
@@ -61,7 +61,7 @@
 (require 'subr-x)
 
 (defgroup npipenv nil
-  "nano support for Pipenv venvs"
+  "Nano support for Pipenv venvs"
   :prefix "npipenv-"
   :group 'python)
 
@@ -88,19 +88,20 @@
 
 (defcustom npipenv-python-shell-buffer-name
   "*Pipenv shell*"
-  "The name of python shell buffers which run on Pipenv virtualenvs."
+  "The name of a python shell buffer which has access to a Pipenv virtualenv."
   :type 'string
   :group 'npipenv)
 
 (defcustom npipenv-shell-mode-buffer-init-command
   "exec pipenv shell"
-  "The shell command to launnch a python interactive mode on a virtualenv."
+  "The shell command to launnch a python interactive mode for a virtualenv."
   :type 'string
   :group 'npipenv)
 
 (defcustom npipenv-mode-line-prefix
   " nP"
   "Mode line lighter prefix for nPipenv.
+
 It's used by `nPipenv-default-mode-line' when using dynamic mode line
 lighter and is the only thing shown in the mode line otherwise."
   :group 'npipenv
@@ -114,25 +115,25 @@ lighter and is the only thing shown in the mode line otherwise."
 
 (defcustom npipenv-mode-line-function
   'npipenv-default-mode-line
-  "The function to use to generate project-specific mode-line.
+  "The function to be used to generate project-specific mode-line.
+
 The default function adds the project name to the mode-line."
   :group 'npipenv
   :type 'function)
 
 (defcustom npipenv-dynamic-mode-line
   t
-  "If true, update the mode-line dynamically.
-Only file buffers are affected by this, as the update happens via
-`find-file-hook'."
+  "Update the mode-line dynamically if true.
+
+This is for the global minor mode version to come."
   :group 'npipenv
   :type 'boolean)
 
 (defcustom npipenv-dynamic-mode-line-in-dired-mode
   t
-  "If true, update the mode-line dynamically in `dired-mode'.
+  "Update the mode-line dynamically in `dired-mode' if true.
 
-Only file buffers are affected by this, as the update happens via
-`dired-mode-hook'."
+This is for the global minor mode version to come."
   :group 'npipenv
   :type 'boolean)
 
@@ -159,7 +160,7 @@ The value should be 'exploring (default), or 'calling."
   "The root directory of the Pipenv project.")
 
 (defvar-local npipenv--pipenv-project-name nil
-  "The Pipenv project name or the name of the enclosing directory.")
+  "The Pipenv project name or the name of the directory where Pipfile exists.")
 
 (defvar-local npipenv--pipenv-virtualenv-root nil
   "The virtualenv root directory of the Pipenv project.")
@@ -202,10 +203,7 @@ The value should be 'exploring (default), or 'calling."
    :sentinel sentinel))
 
 (defun npipenv--process-filter-for-where(process response)
-  "PROCESS filter to set the variables based on RESPONSE.
-
-The variables are `npipenv--pipenv-virtualenv-root' and
-`npipenv--pipenv-project-name'."
+  "PROCESS filter for '--where' to set the variables based on RESPONSE."
   (npipenv--debug "response: %s" response)
   (npipenv--debug "matched responce: %s" (s-match "\\(/.*\\)
 " response))
@@ -221,10 +219,7 @@ The variables are `npipenv--pipenv-virtualenv-root' and
                 npipenv--pipenv-project-name 'no-virtualenv)))))
 
 (defun npipenv--process-filter-for-venv(process response)
-  "PROCESS filter to set the variables based on RESPONSE.
-
-The variables are `npipenv--pipenv-project-root' and
-`npipenv--pipenv-project-name'."
+  "PROCESS filter for '--venv' to set the variables based on RESPONSE."
   (npipenv--debug "response: %s" response)
   (npipenv--debug "matched responce: %s" (s-match "\\(/.*\\)
 " response))
@@ -252,25 +247,25 @@ The variables are `npipenv--pipenv-project-root' and
     (npipenv--make-pipenv-process command filter)))
 
 (defun npipenv--set-pipenv-project-root-by-calling ()
-  "Set the Pipenv project root varirable."
+  "Set the Pipenv project root varirable by calling the pipenv executable."
   (if (null npipenv--pipenv-project-root)
       (npipenv--force-wait (npipenv--get-pipenv-project-root))
     npipenv--pipenv-project-root))
 
 (defun npipenv--set-pipenv-virtualenv-root-by-calling ()
-  "Set the Pipenv virtualenv root varirable."
+  "Set the Pipenv virtualenv root varirable by calling the pipenv executable."
   (if (null npipenv--pipenv-virtualenv-root)
       (npipenv--force-wait (npipenv--get-pipenv-virtualenv-root))
     npipenv--pipenv-virtualenv-root))
 
 (defun npipenv--fill-pipenv-project-root ()
-  "Fill `npipenv--pipenv-project-root' when it's non-nill, by calling `npipenv--get-pipenv-project-root'."
+  "Fill `npipenv--pipenv-project-root' if it's non-nill."
   (if (eql npipenv-pipenv-project-detection 'exploring)
       (npipenv--set-pipenv-project-root-by-exploring)
     (npipenv--set-pipenv-project-root-by-calling)))
 
 (defun npipenv--fill-pipenv-virtualenv-root ()
-  "Fill `npipenv--pipenv-virtualenv-root' when it's non-nill."
+  "Fill `npipenv--pipenv-virtualenv-root' if it's non-nill."
   (npipenv--set-pipenv-virtualenv-root-by-calling))
 
 (defun npipenv--venvpath-to-prjname (venvpath)
@@ -282,13 +277,14 @@ The variables are `npipenv--pipenv-project-root' and
   (nth 1 (s-match "\\(/.*\\)-........$" venvpath)))
 
 (defun npipenv-python-shell-get-buffer-advice (orig-fun &rest orig-args)
-  "Replace the buffer in ORIG-ARGS if its inferior python mode exists.
+  "Tweak the buffer entity in ORIG-ARGS.
 
-ORIG-FUN must be `python-shell-get-buffer'."
+Replace it with the inferior process for the project exists, otherwise
+leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
   (npipenv--fill-pipenv-project-root)
   (if (stringp npipenv--pipenv-project-name) ;; i.e. it's not 'no-virtualenv
       (let* ((venv-dedicated-buffer-name (format "*%s[v:%s]*" python-shell-buffer-name
-                                       npipenv--pipenv-project-name))
+                                                 npipenv--pipenv-project-name))
              (venv-dedicated-running (comint-check-proc venv-dedicated-buffer-name)))
         (if venv-dedicated-running
             venv-dedicated-buffer-name
@@ -307,7 +303,9 @@ ORIG-FUN must be `python-shell-get-buffer'."
                 (t "ERR"))))
 
 (defun npipenv-write-file-advice (orig-fun &rest orig-args)
-  "Update two variables when `write-file' (ORIG-FUN with ORIG-ARGS) is called."
+  "Update two variables when `write-file' (ORIG-FUN with ORIG-ARGS) is called.
+
+The two variables are: `npipenv--pipenv-project-root' and `npipenv--pipenv-project-name'"
   (let ((res (apply orig-fun orig-args)))
     (when (bound-and-true-p npipenv-mode)
       (npipenv--force-wait (npipenv--get-pipenv-project-root))
@@ -315,12 +313,16 @@ ORIG-FUN must be `python-shell-get-buffer'."
     res))
 
 (defun npipenv-find-file-hook-function ()
-  "Called by `find-file-hook' when `npipenv-mode' is on."
+  "Called by `find-file-hook' when `npipenv-mode' is on.
+
+This is for the global minor mode version to come."
   (when npipenv-dynamic-mode-line
     (npipenv--update-mode-line)))
 
 (defun npipenv-dired-mode-hook-function ()
-  "Get the names of the Pipenv virtulenv root and project, and update the mode line."
+  "Get the name and root of a Pipenv project, and update the mode line.
+
+This is for the global minor mode version to come."
   (when npipenv-dynamic-mode-line-in-dired-mode
     (npipenv--force-wait (npipenv--get-pipenv-project-root))
     (npipenv--update-mode-line)))
@@ -331,7 +333,9 @@ ORIG-FUN must be `python-shell-get-buffer'."
 nPipenv can significantly slow Emacs startup process, when
 `desktop-mode' restores many files.  This is a temporaly workaroud
 and will be removed in the future release when alternative methods
-to detect Pipenv virtualenvs implemented."
+to detect Pipenv virtualenvs implemented.
+
+This is for the global minor mode version to come."
   (npipenv-mode 0))
 
 (defmacro npipenv--do-it-or-message (var it)
@@ -345,7 +349,7 @@ to detect Pipenv virtualenvs implemented."
          (t (message "Something wrong has happend in nPipenv."))))
 
 (defun npipenv--set-pipenv-project-root-by-exploring ()
-  "Set the project root varirable."
+  "Set the Pipenv project root varirable by exploring the directory bottom-up."
   (if-let* ((filename (buffer-file-name (current-buffer)))
             (dirname (f-dirname filename))
             (root (npipenv--get-pipenv-project-root-by-exploring dirname)))
@@ -353,13 +357,13 @@ to detect Pipenv virtualenvs implemented."
     (setq npipenv--pipenv-project-root 'no-virtualenv)))
 
 (defun npipenv--get-pipenv-project-root-by-exploring (dirname)
-  "Return a Pipenv root if DIRNAME is under a project, otherwise nil."
+  "Return the Pipenv project root if DIRNAME is under a project, otherwise nil."
   (npipenv--get-pipenv-project-root-by-exploring-impl (f-split (f-full dirname))))
 
 (defun npipenv--get-pipenv-project-root-by-exploring-impl (dirname-list)
   "Return a Pipenv root if DIRNAME-LIST is under a project, otherwise nil.
 
-DIRNAME-LIST should be the f-split style.  e.g. (\"/\" \"usr\" \"local\")."
+DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
   (if (null dirname-list)
       nil
     (let ((dirname (apply #'f-join dirname-list)))
@@ -368,7 +372,7 @@ DIRNAME-LIST should be the f-split style.  e.g. (\"/\" \"usr\" \"local\")."
         (npipenv--get-pipenv-project-root-by-exploring-impl (nbutlast dirname-list 1))))))
 
 (defun npipenv--is-pipenv-root? (dirname)
-  "Return t if DIRNAME is a Pipenv root, otherwise nil."
+  "Return t if DIRNAME is a Pipenv project root, otherwise nil."
   (f-exists? (concat (f-full dirname) "/Pipfile")))
 
 ;; User facing functions
@@ -379,7 +383,7 @@ DIRNAME-LIST should be the f-split style.  e.g. (\"/\" \"usr\" \"local\")."
     (add-hook 'python-mode-hook 'npipenv-mode)))
 
 (defun npipenv-run-python ()
-  "Run an inferior python shell on a virtulaenv."
+  "Run an inferior python shell for a virtulaenv."
   (interactive)
   (npipenv--fill-pipenv-project-root)
   (npipenv--do-it-or-message
@@ -402,7 +406,7 @@ DIRNAME-LIST should be the f-split style.  e.g. (\"/\" \"usr\" \"local\")."
    (message "Project: %s" npipenv--pipenv-project-root)))
 
 (defun npipenv-update-pipenv-project-root ()
-  "Update the Pipenv project project root directory."
+  "Update the Pipenv project root directory."
   (interactive)
   (npipenv--force-wait (npipenv--get-pipenv-project-root))
   (npipenv--update-mode-line)
@@ -411,7 +415,7 @@ DIRNAME-LIST should be the f-split style.  e.g. (\"/\" \"usr\" \"local\")."
    (message "Project: %s" npipenv--pipenv-project-root)))
 
 (defun npipenv-display-pipenv-virtualenv-root ()
-  "Show the path to the Pipenv project root directory."
+  "Show the path to the Pipenv virtualenv root directory."
   (interactive)
   (npipenv--fill-pipenv-virtualenv-root)
   (npipenv--update-mode-line)
@@ -420,7 +424,7 @@ DIRNAME-LIST should be the f-split style.  e.g. (\"/\" \"usr\" \"local\")."
    (message "Virtualenv: %s" npipenv--pipenv-virtualenv-root)))
 
 (defun npipenv-pipenv-shell ()
-  "Spawn a shell-mode shell and activate a Pipenv virtualenv."
+  "Spawn a shell-mode shell and invoke a Pipenv shell."
   (interactive)
   (let ((name (generate-new-buffer-name npipenv-python-shell-buffer-name)))
     (pop-to-buffer name)
