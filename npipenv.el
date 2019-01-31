@@ -59,6 +59,7 @@
 (require 'python)
 (require 's)
 (require 'subr-x)
+(require 'npipenv-pipenv-compat)
 
 (defgroup npipenv nil
   "Nano support for Pipenv virtualenvs."
