@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 (2019-02-82)
+
+### New features
+
+* Added virtualenv-buffer-dedicated inferior python processes.
+
+
 ## 0.1.1 (2019-01-28)
 
 ### New features

@@ -42,7 +42,7 @@ customize `npipenv-keymap-prefix` to whatever works best for you.
 ### Basic Usage
 
 `nPipenv-mode` is automatically enabled when you open a Python file, i.e.
-it's hooked to the `python-mode`. 
+it's hooked to the `python-mode`.
 
 The mode line shows the Pipenv project the file the buffer visiting belongs to.
 The association usually happens when you open a file. The mode line looks like
@@ -56,21 +56,37 @@ After that npipenv-mode works transparently: you can use all the
 interaction between the source file(s) and the inferior python mode as
 in `python-mode`.
 
+Additionally, you can spawn a buffer-dedicated inferior python mode
+with access to the virtual environment by putting any prefix args to
+<kbd>M-x</kbd> <kbd>npipenv-run-python</kbd> or <kbd>C-u</kbd>
+<kbd>C-c</kbd> <kbd>'</kbd> <kbd>p</kbd>. The mode lines look like
+**nP[v:hello_world;b:hello.py]** and
+**\*Python[v:hello_world;b:hello.py]\***.  The inferior python process
+only belongs to the buffer. Other buffers from the same Pipenv can't
+send code chunks to the process.
+
 Note: The `python-mode` defines two types of inferior python
-processes: global and (buffer-)dedicated. The precedence order for the
-destination when you send a source code chunk from a file buffer in
-a situation that you have spawned both a global inferior process and a
-dedicated inferior process is 'always dedicated first.' With adding a
-new type, virtualenv-dedicated, the current nPipenv's precedence
-strategy is 'always virtualenv-dedicated
-first'. i.e. virtualenv-dedicated -> buffer-dedicated -> global. We
-might change this in a future release.
+processes: global and (buffer-)dedicated. Their precedence order
+'dedicated first':
+
+```
+buffer-dedicated > global
+```
+
+nPipenv introduces two additional types: virtualenv-dedicated and
+virtualenv-buffer-dedicated. The precedence order is:
+
+```
+virtualenv-buffer-dedicated > virtualenv-dedicated > buffer-dedicated > global
+```
+
+We might change this in a future release.
 
 If you need to update the association between a buffer and a
 virtual environment, use the command <kbd>C-c</kbd> <kbd>'</kbd> <kbd>v</kbd> or <kbd>M-x</kbd>
 <kbd>npipenv-update-pipenv-virtualenv-root</kbd>.
 
-You can change the Pipenv project detection method by customising
+You can change the Pipenv project detection method by customizing
 `npipenv-pipenv-project-detection`. Its default value is `'exploring`,
 which explores the directory structure bottom-up to find a
 `Pipfile`. Another method is `'calling`, which calls `pipenv --where`
@@ -83,7 +99,7 @@ Spawn a Pipenv shell by <kbd>C-c</kbd> <kbd>'</kbd> <kbd>s</kbd> or <kbd>M-x</kb
 
 * It slows down your Emacs startup process when you restore lots of
   Python files with desktop-mode. How slow depends on the project
-  detection mode: `exploring` can be acceptable, 'calling' would be a
+  detection mode: `'exploring` can be acceptable, `'calling` would be a
   disaster.
 
 ## Known issues

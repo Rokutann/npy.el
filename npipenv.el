@@ -5,7 +5,7 @@
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
 ;; Keywords: tools, processes
 ;; URL: https://github.com/mukuge/nPipenv/
-;; Package-Version: 0.1.1
+;; Package-Version: 0.1.2
 ;; Package-Requires: ((emacs "26.1")(f "0.20.0")(s "1.7.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -61,7 +61,6 @@
 (require 'python)
 (require 's)
 (require 'subr-x)
-(require 'npipenv-pipenv-compat)
 
 (defgroup npipenv nil
   "Nano support for Pipenv virtualenvs."
