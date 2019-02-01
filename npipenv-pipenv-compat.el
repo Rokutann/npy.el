@@ -91,10 +91,6 @@ if it's longer than 42."
     (concat sanitized "-" encoded-hash)))
 ;; (npipenv-pipenv-compat-virtualenv-name "/i/hate/spam")
 
-
-
-
-
 (provide 'npipenv-pipenv-compat)
 
 ;;; npipenv-pipenv-compat.el ends here
