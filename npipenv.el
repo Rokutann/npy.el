@@ -160,7 +160,7 @@ The value should be 'exploring (default), or 'calling."
   "Display debug info when non-nil.")
 
 (defvar npipenv--python-shell-virtualenv-root-log nil
-  "A list containing the values of `python-shell-virtualenv-root'.")
+  "A list containing the values of `python-shell-virtualenv-root' called.")
 
 (defun npipenv--debug (msg &rest args)
   "Print MSG and ARGS like `message', but only if debug output is enabled."
@@ -190,7 +190,7 @@ The value should be 'exploring (default), or 'calling."
   (f-filename (npipenv-pipenv-compat-virtualenv-name path)))
 
 (defun npipenv--fill-pipenv-project-names (root)
-  "Fill the Pipenv project name vars with ROOT."
+  "Fill the Pipenv project name vars by using ROOT."
   (cond ((and (stringp root) (f-directory-p root))
          (setq npipenv--pipenv-project-root root
                npipenv--pipenv-project-name (f-filename root)
@@ -213,13 +213,13 @@ The value should be 'exploring (default), or 'calling."
     (otherwise (setq npipenv--pipenv-virtualenv-root venv-path))))
 
 (defun npipenv--clear-all-pipenv-project-vars ()
-  "Clear or set nill to all vars."
+  "Clear all Pipenv project vars."
   (npipenv--fill-pipenv-project-names nil)
   (npipenv--fill-pipenv-virtualenv-root nil)
   (setq npipenv--python-shell-virtualenv-root-log nil))
 
 (defun npipenv--get-pipenv-project-root-from-dotproject (venv-path)
-  "Get the Pipenv project root from .project in VENV-PATH."
+  "Get the Pipenv project root from the `.project' file in VENV-PATH."
   (when (and (stringp venv-path)
              (f-directory-p venv-path))
     (with-temp-buffer
@@ -227,7 +227,7 @@ The value should be 'exploring (default), or 'calling."
       (buffer-string))))
 
 (defun npipenv--set-pipenv-project-vars-from-dotproject (venv-path)
-  "Set the Pipenv project root and names from .project in VENV-PATH."
+  "Set the Pipenv project root and names from the `.project' file in VENV-PATH."
   (if-let* ((root (npipenv--get-pipenv-project-root-from-dotproject venv-path)))
       (if (and (stringp root)
                (f-directory-p root))
@@ -250,14 +250,16 @@ The value should be 'exploring (default), or 'calling."
   (s-chomp response))
 
 (defun npipenv--force-wait (process)
-  "Block while PROCESS exits with one sec timeout."
+  "Block while PROCESS exists but release after one sec anyway."
   (let ((counter 0))
     (while (and (process-live-p process)
                 (< counter 10))
       (sit-for 0.1 t)
       (cl-incf counter))
-    (if (>= counter 10)
-        (npipenv--debug "The npipenv--force-wait limit has reached."))))
+    (when (>= counter 10)
+      (npipenv--debug "The npipenv--force-wait limit has reached.")
+      ;; FIXME: Might better to rase an exception.
+      )))
 
 (defun npipenv--make-pipenv-process (command &optional filter sentinel)
   "Make a Pipenv process from COMMAND; optional custom FILTER or SENTINEL."
@@ -272,7 +274,7 @@ The value should be 'exploring (default), or 'calling."
 ;;; Functions to find Pipenv information by calling the `pipenv' exectable.
 
 (defun npipenv--process-filter-for-venv(process response)
-  "PROCESS filter for '--where' to set the variables based on RESPONSE."
+  "PROCESS filter for '--venv' to set the variables based on RESPONSE."
   (npipenv--debug "response: %s" response)
   (npipenv--debug "matched responce: %s" (s-match "\\(/.*\\)
 " response))
@@ -288,7 +290,7 @@ The value should be 'exploring (default), or 'calling."
           (npipenv--fill-pipenv-virtualenv-root 'no-virtualenv)))))
 
 (defun npipenv--process-filter-for-where(process response)
-  "PROCESS filter for '--venv' to set the variables based on RESPONSE."
+  "PROCESS filter for '--where' to set the variables based on RESPONSE."
   (npipenv--debug "response: %s" response)
   (npipenv--debug "matched responce: %s" (s-match "\\(/.*\\)
 " response))
@@ -302,43 +304,43 @@ The value should be 'exploring (default), or 'calling."
         (npipenv--fill-pipenv-project-names 'no-virtualenv))))
 
 (defun npipenv--find-pipenv-virtualenv-root-by-calling ()
-  "Call pipenv with '--venv' to get the path to the virtualenv root."
+  "Call `pipenv' with '--venv' to get the path to the virtualenv root."
   (let ((command (list npipenv-pipenv-executable "--venv"))
         (filter 'npipenv--process-filter-for-venv))
     (npipenv--make-pipenv-process command filter)))
 
 (defun npipenv--find-pipenv-project-root-by-calling ()
-  "Call pipenv with '--where' to get the Pipenv project root."
+  "Call `pipenv' with '--where' to get the Pipenv project root."
   (let ((command (list npipenv-pipenv-executable "--where"))
         (filter 'npipenv--process-filter-for-where))
     (npipenv--make-pipenv-process command filter)))
 
 (defun npipenv--set-pipenv-project-vars-by-calling ()
-  "Set the Pipenv project root variable by calling the pipenv executable."
+  "Set the Pipenv project root variables by calling `pipenv'."
   (if (null npipenv--pipenv-project-root)
       (npipenv--force-wait (npipenv--find-pipenv-project-root-by-calling))
     npipenv--pipenv-project-root))
 
 (defun npipenv--set-pipenv-virtualenv-root-var-by-calling ()
-  "Set the Pipenv virtualenv root variable by calling the pipenv executable."
+  "Set the Pipenv virtualenv root variable by calling `pipenv'."
   (if (null npipenv--pipenv-virtualenv-root)
       (npipenv--force-wait (npipenv--find-pipenv-virtualenv-root-by-calling))
     npipenv--pipenv-virtualenv-root))
 
 (defun npipenv--set-pipenv-project-vars ()
-  "Fill `npipenv--pipenv-project-root' if it's non-nil."t
+  "Interface function to set the Pipenv project vars."
   (if (eql npipenv-pipenv-project-detection 'exploring)
       (npipenv--set-pipenv-project-vars-by-exploring)
     (npipenv--set-pipenv-project-vars-by-calling)))
 
 (defun npipenv--set-pipenv-virtualenv-root-var ()
-  "Fill `npipenv--pipenv-virtualenv-root' if it's non-nil."
+  "Set the Pipenv virtualenv root var."
   (npipenv--set-pipenv-virtualenv-root-var-by-calling))
 
 ;;; Functions to find Pipenv information by exploring directory structures.
 
 (defun npipenv--set-pipenv-project-vars-by-exploring ()
-  "Set the Pipenv project root variable by exploring the directory bottom-up."
+  "Set the Pipenv project variables by exploring its path bottom-up."
   (if-let* ((filename (buffer-file-name (current-buffer)))
             (dirname (f-dirname filename))
             (root (npipenv--find-pipenv-project-root-by-exploring dirname)))
@@ -359,6 +361,7 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
       (if (npipenv--pipenv-root-p dirname)
           dirname
         (npipenv--find-pipenv-project-root-by-exploring-impl (nbutlast dirname-list 1))))))
+;; FIXME: Should rewite this as a non-recursive function.
 
 (defun npipenv--pipenv-root-p (dirname)
   "Return t if DIRNAME is a Pipenv project root, otherwise nil."
@@ -393,7 +396,7 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
       (let ((res (apply orig-fun orig-args)))
         res))))
 
-;;; Functions to manage the mode line.
+;;; Functions to manage the modeline.
 
 (defun npipenv-default-mode-line ()
   "Report the Pipenv project name associated with the buffer in the modeline."
@@ -405,7 +408,7 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                 (t "ERR"))))
 
 (defun npipenv--update-mode-line ()
-  "Update the nPipenv mode-line."
+  "Update the nPipenv modeline."
   (let ((mode-line (funcall npipenv-mode-line-function)))
     (setq npipenv--mode-line mode-line))
   (force-mode-line-update))
@@ -452,14 +455,13 @@ This is for the global minor mode version to come."
 ;;; Functions for debug.
 
 (defun npipenv--show-pipenv-vars ()
-  "Show npipenv envrionment information."
+  "Show Pipenv project information."
   (interactive)
   (message (concat "pipenv-project-root: %s\n"
                    "pipenv-project-name: %s\n"
                    "pipenv-project-name-with-hash: %s\n"
                    "pipenv-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root-log: %s\n"
-                   )
+                   "python-shell-virtualenv-root-log: %s\n")
            npipenv--pipenv-project-root
            npipenv--pipenv-project-name
            npipenv--pipenv-project-name-with-hash
@@ -467,7 +469,7 @@ This is for the global minor mode version to come."
            npipenv--python-shell-virtualenv-root-log))
 
 (defun npipenv--clear-pipenv-vars ()
-  "Show npipenv envrionment information."
+  "Clear Pipenv project information."
   (interactive)
   (npipenv--clear-all-pipenv-project-vars)
   (npipenv--show-pipenv-vars))
@@ -477,7 +479,7 @@ This is for the global minor mode version to come."
 ;;;
 
 (defmacro npipenv--when-valid (var it)
-  "Do IT if VAR is valid, otherwise show a warning."
+  "Do IT when VAR is valid, otherwise show a warning."
   `(cond ((stringp ,var)
           ,it)
          ((eq ,var 'no-virtualenv)
@@ -492,7 +494,11 @@ This is for the global minor mode version to come."
     (add-hook 'python-mode-hook 'npipenv-mode)))
 
 (defun npipenv-run-python ()
-  "Run an inferior python shell for a virtualenv."
+  "Run an inferior python process for a virtualenv.
+
+When called interactively with `prefix-arg', it spawns a
+buffer-dedicated inferior python process with the access to the
+virtualenv."
   (interactive)
   (npipenv--force-wait (npipenv--find-pipenv-virtualenv-root-by-calling))
   (npipenv--set-pipenv-project-vars)
@@ -525,9 +531,7 @@ This is for the global minor mode version to come."
 (defun npipenv-update-pipenv-project-root ()
   "Update the Pipenv project root directory."
   (interactive)
-  (setq npipenv--pipenv-project-root nil
-        npipenv--pipenv-project-name nil
-        npipenv--pipenv-project-name-with-hash nil)
+  (npipenv--fill-pipenv-project-names nil)
   (npipenv-display-pipenv-project-root))
 
 (defun npipenv-display-pipenv-virtualenv-root ()
@@ -542,9 +546,7 @@ This is for the global minor mode version to come."
 (defun npipenv-update-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
-  (setq npipenv--pipenv-virtualenv-root nil
-        npipenv--pipenv-project-name nil
-        npipenv--pipenv-project-name-with-hash nil)
+  (npipenv--clear-all-pipenv-project-vars)
   (npipenv-display-pipenv-virtualenv-root))
 
 (defun npipenv-pipenv-shell ()
