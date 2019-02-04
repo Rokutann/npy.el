@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3 (2019-02-04)
+
+### Changes
+
+* Changed the mode name from npipenv to npy.
+
+
 ## 0.1.2 (2019-02-02)
 
 ### New features
