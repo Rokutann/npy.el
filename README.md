@@ -41,7 +41,7 @@ customize `npy-keymap-prefix` to whatever works best for you.
 
 ### Basic Usage
 
-`nnpy-mode` is automatically enabled when you open a Python file, i.e.
+`npy-mode` is automatically enabled when you open a Python file, i.e.
 it's hooked to the `python-mode`.
 
 The mode line shows the Pipenv project the file the buffer visiting belongs to.
