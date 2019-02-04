@@ -8,8 +8,7 @@ instance - spawning multiple inferior python processes for multiple
 Pipenv projects, and dispatching Python code chunks sent from a
 buffer, which is visiting a Python file in one of such Pipenv
 projects, to the inferior python process bound to the same Pipenv
-project. We call this new type of inferior python processes
-**virtualenv-dedicated inferior python process**.
+project. We call this new type of inferior processes **virtualenv-dedicated inferior python processes**.
 
 Some of npy.el's features:
 
