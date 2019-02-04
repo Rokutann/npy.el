@@ -1,13 +1,13 @@
 
 ## Synopsis
 
-**npy.el** is nano (or minimalistic) extensions to the Python development 
+**npy.el** is a set of nano (or minimalistic) extensions to the Python development 
 support in Emacs. Its first goal is to provide a nice integration
 of Pipenv virtual environment and Emacs inferior python mode.  For
 instance - spawning multiple inferior python processes for multiple
 Pipenv projects, and dispatching Python code chunks sent from a
 buffer, which is visiting a Python file in one of such Pipenv
-projects, to the inferior python process bound to the same Pipenv
+projects, to the inferior python process bound to the virtual environment of the same Pipenv
 project. We call this new type of inferior processes **virtualenv-dedicated inferior python processes**.
 
 Some of npy.el's features:
