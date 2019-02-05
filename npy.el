@@ -546,11 +546,13 @@ This is for the global minor mode version to come."
                    "pipenv-project-name: %s\n"
                    "pipenv-project-name-with-hash: %s\n"
                    "pipenv-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root-log: %s\n")
+                   "python-shell-virtualenv-root: %s\n"
+                   "python-shell-virtualenv-root-log: %s")
            npy--pipenv-project-root
            npy--pipenv-project-name
            npy--pipenv-project-name-with-hash
            npy--pipenv-virtualenv-root
+           python-shell-virtualenv-root
            npy--python-shell-virtualenv-root-log))
 
 (defun npy--clear-pipenv-vars ()
