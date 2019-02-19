@@ -24,7 +24,24 @@
 
 ;;; Code:
 
+(defmacro with-playground (filespec &rest body)
+  "Execute BODY in the playground specified by FILESPEC."
+  (declare (indent 1))
+  `(unwind-protect
+       (save-excursion
+         (setq defalut-directory npy-test/playground-path)
+         (npy-helper-create-files npy-test/playground-path
+                                  ,filespec)
+         ,@body)
+     (delete-directory npy-test/playground-path t)))
 
+(ert-deftest npy-test-sample ()
+  (with-playground '(("foo")
+                     ("bar.py" . "(1, 2)")
+                     ("buz.el" . "(message default-directory)"))
+    (find-file-noselect "/tmp/npy-test/buz.el")
+    (eval-buffer)
+    (kill-buffer)))
 
 (provide 'npy-test)
 ;;; npy-test.el ends here

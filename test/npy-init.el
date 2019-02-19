@@ -39,6 +39,10 @@
   (directory-file-name (file-name-directory npy-test/test-path))
   "Path to root directory.")
 
+(defvar npy-test/playground-path
+  "/tmp/npy-test/"
+  "Path to the playground for test.")
+
 (load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
 
 (provide 'npy-init)

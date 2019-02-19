@@ -27,16 +27,16 @@
 (defun npy-helper-create-files (basedir filespec)
   "In BASEDIR, create files according to FILESPEC.
 
-FILESPEC is a list of two-element lists, where the first element
-is a file name relative to BASEDIR and the second the content
-for that file."
+FILESPEC is a list consisting of strings and pairs, where the car
+of a pair is a file name relative to BASEDIR and the cdr of a
+pair is the content for that file."
   (dolist (spec filespec)
     (let* ((filename (if (stringp spec)
                          spec
                        (car spec)))
            (content (if (stringp spec)
-                         ""
-                       (cadr spec)))
+                        ""
+                      (cdr spec)))
            (fullname (format "%s/%s" basedir filename))
            (dirname (file-name-directory fullname)))
       (when (not (file-directory-p dirname))
