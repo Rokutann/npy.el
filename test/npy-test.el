@@ -1,9 +1,9 @@
-;;; test-npy-pipenv-compat.el --- Tests for Pipenv compatibility functions.  -*- lexical-binding: t; -*-
+;;; npy-test.el --- npy: Tests.                      -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Cyriakus "Mukuge" Hill
 
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
-;; Keywords: tools
+;; Keywords: lisp
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,21 +20,11 @@
 
 ;;; Commentary:
 
-;; Tests for Pipenv compatibility functions.
+;; Tests for npy.
 
 ;;; Code:
 
-(ert-deftest pp-test-quote ()
-  "Tests the rendering of `quote' symbols in `pp-to-string'."
-  (should (equal (pp-to-string '(quote quote)) "'quote"))
-  (should (equal (pp-to-string '((quote a) (quote b))) "('a 'b)\n"))
-  (should (equal (pp-to-string '('a 'b)) "('a 'b)\n")))
 
-(ert-deftest npy-pienv-compat-hash ()
-  "Test the hash functions."
-  (should (equal (npy-pipenv-compat--sanitize "1 2$3`4!5*6@7\"8\\9\rA\nB\tC")
-                 "1_2_3_4_5_6_7_8_9_A_B_C"))
-  )
 
-(provide 'test-npy-pipenv-compat)
-;;; test-pipenv-compat.el ends here
+(provide 'npy-test)
+;;; npy-test.el ends here

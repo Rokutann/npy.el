@@ -1,0 +1,2 @@
+-l test/npy-init.el
+--reporter dot
