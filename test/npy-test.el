@@ -36,25 +36,53 @@
 ;;
 ;; /tmp/npy-playground/project3 <- not a Pipenv project
 
-(ert-deftest npy-test-sample-1 ()
+(ert-deftest npy-integration-test/open-a-file-in-a-project ()
   (with-files-in-playground
-      '(("foo")
-        ("bar.py" . "TUP = (1, 2)")
-        ("project1/buz.py" . "VAR = 1")
-        ("project3/foo.py" . "VAR = 2"))
-    (@-find-file "project1/buz.py")
-    (should (equal npy--pipenv-project-root (@- "project1")))
-    ))
+   '(("project1/buz.py" . "VAR = 1"))
+   (@-find-file "project1/buz.py")
+   (should (equal npy--pipenv-project-root (@- "project1")))
+   (kill-buffer "buz.py")
+   ))
 
-(ert-deftest npy-test-sample-2 ()
+(ert-deftest npy-integration-test/open-a-file-deep-in-a-project ()
   (with-files-in-playground
-      '(("foo")
-        ("bar.py" . "TUP = (1, 2)")
-        ("project1/buz.py" . "VAR = 1")
-        ("project3/foo.py" . "VAR = 2"))
-    (@-find-file "project3/foo.py")
-    (should (eq npy--pipenv-project-root 'no-virtualenv))
-    ))
+   '(("project2/deep/in/the/project/buz.py" . "VAR = 1"))
+   (@-find-file "project2/deep/in/the/project/buz.py")
+   (should (equal npy--pipenv-project-root (@- "project2")))
+   (kill-buffer "buz.py")
+   ))
+
+(ert-deftest npy-integration-test/open-a-non-project-file ()
+  (with-files-in-playground
+   '(("project3/foo.py" . "VAR = 2"))
+   (@-find-file "project3/foo.py")
+   (should (eq npy--pipenv-project-root 'no-virtualenv))
+   (kill-buffer "foo.py")
+   ))
+
+(ert-deftest npy-integration-test/open-two-files-in-a-project ()
+  (with-files-in-playground
+   '(("project1/buz.py" . "VAR = 1")
+     ("project1/foo.py" . "VAR = 2"))
+   (@-find-file "project1/buz.py")
+   (should (equal npy--pipenv-project-root (@- "project1")))
+   (@-find-file "project1/foo.py")
+   (should (equal npy--pipenv-project-root (@- "project1")))
+   (kill-buffer "buz.py")
+   (kill-buffer "foo.py")
+   ))
+
+(ert-deftest npy-integration-test/open-two-files-in-different-projects ()
+  (with-files-in-playground
+   '(("project1/buz.py" . "VAR = 1")
+     ("project2/foo.py" . "VAR = 2"))
+   (@-find-file "project1/buz.py")
+   (should (equal npy--pipenv-project-root (@- "project1")))
+   (@-find-file "project2/foo.py")
+   (should (equal npy--pipenv-project-root (@- "project2")))
+   (kill-buffer "buz.py")
+   (kill-buffer "foo.py")
+   ))
 
 (provide 'npy-test)
 ;;; npy-test.el ends here
