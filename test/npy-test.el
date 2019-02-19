@@ -42,8 +42,8 @@
         ("bar.py" . "TUP = (1, 2)")
         ("project1/buz.py" . "VAR = 1")
         ("project3/foo.py" . "VAR = 2"))
-    (find-file-in-playground "project1/buz.py")
-    (should (equal npy--pipenv-project-root (in-playground "project1")))
+    (@-find-file "project1/buz.py")
+    (should (equal npy--pipenv-project-root (@- "project1")))
     ))
 
 (ert-deftest npy-test-sample-2 ()
@@ -52,7 +52,7 @@
         ("bar.py" . "TUP = (1, 2)")
         ("project1/buz.py" . "VAR = 1")
         ("project3/foo.py" . "VAR = 2"))
-    (find-file-in-playground "project3/foo.py")
+    (@-find-file "project3/foo.py")
     (should (eq npy--pipenv-project-root 'no-virtualenv))
     ))
 

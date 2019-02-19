@@ -54,11 +54,11 @@ pair is the content for that file."
      ;;(delete-directory npy-test/playground-path t)
      ))
 
-(defmacro find-file-in-playground (filename &optional wildcards)
+(defmacro @-find-file (filename &optional wildcards)
   "Edit file FILENAME."
   `(find-file (concat npy-test/playground-path ,filename ,wildcards)))
 
-(defmacro in-playground (&rest sequences)
+(defmacro @- (&rest sequences)
   "Concatenate all the arguments and make the result a string."
   `(concat npy-test/playground-path ,@sequences))
 
