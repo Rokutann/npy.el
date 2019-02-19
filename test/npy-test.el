@@ -33,15 +33,28 @@
          (npy-helper-create-files npy-test/playground-path
                                   ,filespec)
          ,@body)
-     (delete-directory npy-test/playground-path t)))
+     ;;(delete-directory npy-test/playground-path t)
+     ))
 
 (ert-deftest npy-test-sample ()
   (with-playground '(("foo")
-                     ("bar.py" . "(1, 2)")
-                     ("buz.el" . "(message default-directory)"))
-    (find-file-noselect "/tmp/npy-test/buz.el")
-    (eval-buffer)
-    (kill-buffer)))
+                     ("bar.py" . "TUP = (1, 2) ")
+                     ("project/buz.py" . "VAR = 1"))
+    (write-region (buffer-name) nil "/tmp/npy")
+    (setq default-directory (concat npy-test/playground-path "project/"))
+    (write-region default-directory nil "/tmp/npy2")
+    (call-process "pipenv" nil t nil "install")
+    (setq default-directory npy-test/playground-path)
+    (write-region default-directory nil "/tmp/npy3")
+    (unwind-protect
+        (progn
+          (find-file "/tmp/npy-test/project/buz.py")
+          (write-region (buffer-name) nil "/tmp/npy4")
+          (write-region (format "%s" npy--pipenv-project-root) nil "/tmp/npy5")
+
+          )
+      (setq default-directory (concat npy-test/playground-path "project/"))
+      (call-process "pipenv" nil t nil "--rm"))))
 
 (provide 'npy-test)
 ;;; npy-test.el ends here

@@ -45,5 +45,7 @@
 
 (load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
 
+(npy-initialize)
+
 (provide 'npy-init)
 ;;; npy-init.el ends here

@@ -210,7 +210,7 @@ The value should be 'exploring (default), or 'calling."
 
 (defun npy--fill-pipenv-virtualenv-root (venv-path)
   "Fill the Pipenv virtualenv root var with VENV-PATH."
-  (case venv-path
+  (cl-case venv-path
     (nil (setq npy--pipenv-virtualenv-root nil))
     ('no-virtualenv (setq npy--pipenv-virtualenv-root 'no-virtualenv))
     (otherwise (setq npy--pipenv-virtualenv-root venv-path))))
@@ -266,7 +266,7 @@ if it's longer than 42."
   "Add trailing padding equal signs to STR."
   (let ((remaining (% (length str) 4)))
     (concat str
-            (case remaining
+            (cl-case remaining
               (1 "===")
               (2 "==")
               (3 "=")
