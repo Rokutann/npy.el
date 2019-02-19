@@ -84,5 +84,16 @@
    (kill-buffer "foo.py")
    ))
 
+(ert-deftest npy-integration-test/spawn-an-inferior-python-buffer ()
+  (with-files-in-playground
+   '(("project1/buz.py" . "VAR = 1"))
+   (@-find-file "project1/buz.py")
+   (should (equal npy--pipenv-project-root (@- "project1")))
+   (npy-run-python)
+   (should-not (eq (get-buffer "*Python[v:project1]*") nil))
+   (kill-buffer "buz.py")
+   ))
+
+
 (provide 'npy-test)
 ;;; npy-test.el ends here
