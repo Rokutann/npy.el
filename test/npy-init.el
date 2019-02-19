@@ -40,7 +40,7 @@
   "Path to root directory.")
 
 (defvar npy-test/playground-path
-  "/tmp/npy-test/"
+  "/tmp/npy-playground/"
   "Path to the playground for test.")
 
 (load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
