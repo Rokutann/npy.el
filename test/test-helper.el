@@ -43,5 +43,25 @@ pair is the content for that file."
         (make-directory dirname t))
       (write-region content nil fullname))))
 
+(defmacro with-files-in-playground (filespec &rest body)
+  "Execute BODY in the playground specified by FILESPEC."
+  (declare (indent 1))
+  `(unwind-protect
+       (progn
+         (npy-helper-create-files npy-test/playground-path
+                                  ,filespec)
+         ,@body)
+     ;;(delete-directory npy-test/playground-path t)
+     ))
+
+(defmacro find-file-in-playground (filename &optional wildcards)
+  "Edit file FILENAME."
+  `(find-file (concat npy-test/playground-path ,filename ,wildcards)))
+
+(defmacro in-playground (&rest sequences)
+  "Concatenate all the arguments and make the result a string."
+  `(concat npy-test/playground-path ,@sequences))
+
+
 (provide 'test-helper)
 ;;; test-helper.el ends here

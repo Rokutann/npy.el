@@ -24,26 +24,35 @@
 
 ;;; Code:
 
-(defmacro with-files-in-playground (filespec &rest body)
-  "Execute BODY in the playground specified by FILESPEC."
-  (declare (indent 1))
-  `(unwind-protect
-       (progn
-         (npy-helper-create-files npy-test/playground-path
-                                  ,filespec)
-         ,@body)
-     ;;(delete-directory npy-test/playground-path t)
-     ))
 
-(ert-deftest npy-test-sample ()
+;; The Map of the Playground
+;;
+;; /tmp/npy-playground/project1 <- a Pipenv project
+;; /tmp/npy-playground/project1/test
+;; /tmp/npy-playground/project1/lib
+;;
+;; /tmp/npy-playground/project2 <- a Pipenv project
+;; /tmp/npy-playground/project2/deep/in/the/project
+;;
+;; /tmp/npy-playground/project3 <- not a Pipenv project
+
+(ert-deftest npy-test-sample-1 ()
   (with-files-in-playground
       '(("foo")
-        ("bar.py" . "TUP = (1, 2) ")
+        ("bar.py" . "TUP = (1, 2)")
         ("project1/buz.py" . "VAR = 1")
         ("project3/foo.py" . "VAR = 2"))
-    (find-file (concat npy-test/playground-path "project1/buz.py"))
-    (should (equal npy--pipenv-project-root (concat npy-test/playground-path "project1")))
-    (find-file (concat npy-test/playground-path "project3/foo.py"))
+    (find-file-in-playground "project1/buz.py")
+    (should (equal npy--pipenv-project-root (in-playground "project1")))
+    ))
+
+(ert-deftest npy-test-sample-2 ()
+  (with-files-in-playground
+      '(("foo")
+        ("bar.py" . "TUP = (1, 2)")
+        ("project1/buz.py" . "VAR = 1")
+        ("project3/foo.py" . "VAR = 2"))
+    (find-file-in-playground "project3/foo.py")
     (should (eq npy--pipenv-project-root 'no-virtualenv))
     ))
 
