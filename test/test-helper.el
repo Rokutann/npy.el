@@ -49,18 +49,32 @@ pair is the content for that file."
   `(unwind-protect
        (progn
          (npy-helper-create-files npy-test/playground-path
-                                  ,filespec)
+                                  ',filespec)
          ,@body)
      ;;(delete-directory npy-test/playground-path t)
      ))
 
-(defmacro @-find-file (filename &optional wildcards)
+(defmacro with-file-buffers (files &rest body)
+  "Execute BODY after creating buffers visiting FILES."
+  (declare (indent 1))
+  (let ((file (cl-gensym "file-")))
+    `(progn
+       (dolist (,file ',files)
+         (@-find-file ,file))
+       (unwind-protect
+           (progn
+             ,@body)
+         (dolist (,file ',files)
+           (kill-buffer (f-filename ,file)))))))
+
+(defmacro @-find-file (filename)
   "Edit file FILENAME."
-  `(find-file (concat npy-test/playground-path ,filename ,wildcards)))
+  `(find-file-noselect (concat npy-test/playground-path ,filename) nil nil))
 
 (defmacro @- (&rest sequences)
   "Concatenate all the arguments and make the result a string."
   `(concat npy-test/playground-path ,@sequences))
+
 
 
 (provide 'test-helper)
