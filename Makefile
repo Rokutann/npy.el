@@ -6,16 +6,16 @@ all: test
 test: clean-elc delete-playground
 	${MAKE} playground
 	${MAKE} unit
-	${MAKE} compile
-	${MAKE} unit
-	${MAKE} clean-elc
+#	${MAKE} compile
+#	${MAKE} unit
+#	${MAKE} clean-elc
 	${MAKE} delete-playground
 
 unit:
 	${CASK} exec ert-runner
 
 compile:
-	${CASK} exec ${EMACS} -Q -batch -f batch-byte-compile nalist.el
+	${CASK} exec ${EMACS} -Q -batch -f batch-byte-compile npy.el
 
 clean-elc:
 	rm -f npy.elc
