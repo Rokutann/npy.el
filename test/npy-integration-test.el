@@ -137,5 +137,82 @@
           "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project2)
         (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
 
+(ert-deftest npy-integration-test/spawn-an-inferior-python-buffer/send-string ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\""))
+    (with-file-buffers ("project1/buz.py")
+      (with-current-buffer  "buz.py"
+        (npy-run-python)
+        (npy-helper-wait))
+      (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
+        (with-current-buffer "buz.py"
+          (python-shell-send-buffer))
+        (should-response-match python-inf-buf
+          "print(VAR)\n" "from buz.py")
+        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+
+(ert-deftest npy-integration-test/spawn-two-inferior-python-buffers/send-two-strings-each-in-a-different-venv ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
+                             ("project2/foo.py" . "VAR = \"from foo.py\""))
+    (with-file-buffers ("project1/buz.py" "project2/foo.py")
+      (with-current-buffer "buz.py"
+        (npy-run-python))
+      (with-current-buffer "foo.py"
+        (npy-run-python))
+      (npy-helper-wait)
+      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[v:project2]*")))
+        (with-current-buffer "buz.py"
+          (python-shell-send-buffer))
+        (with-current-buffer "foo.py"
+          (python-shell-send-buffer))
+        (should-response-match python-inf-buf-1
+          "print(VAR)\n" "from buz.py")
+        (should-response-match python-inf-buf-2
+          "print(VAR)\n" "from foo.py")
+        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
+
+(ert-deftest npy-integration-test/spawn-three-inferior-python-buffers/send-strings-in-a-venv ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
+                             ("project2/foo.py" . "VAR = \"from foo.py\"")
+                             ("project2/bar.py" . "VAR2 = \"from bar.py\""))
+    (with-file-buffers ("project1/buz.py" "project2/foo.py" "project2/bar.py")
+      (with-current-buffer "buz.py"
+        (npy-run-python))
+      (with-current-buffer "foo.py"
+        (npy-run-python))
+      (npy-helper-wait)
+      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[v:project2]*")))
+        (with-current-buffer "foo.py"
+          (python-shell-send-buffer))
+        (should-response-match python-inf-buf-2
+          "print(VAR)\n" "from foo.py")
+        (with-current-buffer "bar.py"
+          (python-shell-send-buffer))
+        (should-response-match python-inf-buf-2
+          "print(VAR2)\n" "from bar.py")
+        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
+
+(ert-deftest npy-integration-test/spawn-a-normal-inf-buffer-and-a-venv-buffer/simple ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
+                             ("project3/foo.py" . "VAR = \"from foo.py\""))
+    (with-file-buffers ("project1/buz.py" "project3/foo.py")
+      (with-current-buffer "buz.py"
+        (npy-run-python))
+      (with-current-buffer "foo.py"
+        (run-python))
+      (npy-helper-wait)
+      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python*")))
+        (with-current-buffer "buz.py"
+          (python-shell-send-buffer))
+        (with-current-buffer "foo.py"
+          (python-shell-send-buffer))
+        (should-response-match python-inf-buf-1
+          "print(VAR)\n" "from buz.py")
+        (should-response-match python-inf-buf-2
+          "print(VAR)\n" "from foo.py")
+        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
+
 (provide 'npy-test)
 ;;; npy-test.el ends here
