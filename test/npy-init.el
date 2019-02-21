@@ -43,6 +43,10 @@
   "/tmp/npy-playground/"
   "Path to the playground for test.")
 
+(defvar npy-test/python-wait
+  1
+  "Sleep for duration after inputting somethng to a Python interpreter.")
+
 (load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
 
 (npy-initialize)

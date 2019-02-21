@@ -82,7 +82,11 @@
       (set-buffer "buz.py")
       (should (equal npy--pipenv-project-root (@- "project1")))
       (npy-run-python)
-      (should-not (eq (get-buffer "*Python[v:project1]*") nil)))))
+      (npy-helper-wait)
+      (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
+        (should-not (eq  python-inf-buf nil))
+        (npy-helper-kill-python-inferior-buffer python-inf-buf)))))
+
 
 (provide 'npy-test)
 ;;; npy-test.el ends here

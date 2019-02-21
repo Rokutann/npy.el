@@ -75,6 +75,15 @@ pair is the content for that file."
   "Concatenate all the arguments and make the result a string."
   `(concat npy-test/playground-path ,@sequences))
 
+(defun npy-helper-wait ()
+  "Wait the Python interpreter."
+  (sleep-for npy-test/python-wait))
+
+(defun npy-helper-kill-python-inferior-buffer (buffer-or-name)
+  "Kill BUFFER-OR-NAME, which is bound to a Python inferior process."
+  (python-shell-send-string "quit()\n")
+  (npy-helper-wait)
+  (kill-buffer buffer-or-name))
 
 
 (provide 'test-helper)
