@@ -105,22 +105,7 @@
       (npy-helper-wait)
       (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
         (should-not (eq  python-inf-buf nil))
-        (npy-helper-kill-python-inferior-buffer python-inf-buf)))))
-
-(defvar npy-test/match-flag nil
-  "Non-nil means there has been no successful match.")
-
-(defun npy-helper-match-filter (proc string)
-  "Check if outputs of PROC containg STRING."
-  (when (s-matches-p npy-test/venv-root-for-project1 string)
-    (setq npy-test/match-flag t)))
-
-(defun npy-helper-match-filter (string)
-  "Check if outputs of PROC containg STRING."
-  ;;  (write-region (format "string:%s\n" string) nil "/tmp/npy.log" t)
-  (when (s-matches-p npy-test/venv-root-for-project1 string)
-    ;;    (write-region (format "%s" string) nil "/tmp/npy.log" t)
-    (setq npy-test/match-flag t)))
+        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
 
 (ert-deftest npy-integration-test/spawn-an-inferior-python-buffer/check-sys-path ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -130,22 +115,27 @@
       (npy-run-python)
       (npy-helper-wait)
       (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
-        (with-current-buffer python-inf-buf
-          (should-not (eq  python-inf-buf nil))
-          (setq comint-output-filter-functions
-                '(ansi-color-process-output
-                  npy-helper-match-filter
-                  python-shell-comint-watch-for-first-prompt-output-filter
-                  python-pdbtrack-comint-output-filter-function
-                  python-comint-postoutput-scroll-to-bottom
-                  comint-watch-for-password-prompt
-                  ))
-          (setq npy-test/match-flag nil)
-          (python-shell-send-string "import sys\nprint(sys.path)\n")
-          (npy-helper-wait)
-          (should npy-test/match-flag))
-        (npy-helper-kill-python-inferior-buffer python-inf-buf)))))
+        (should-not (eq  python-inf-buf nil))
+        (should-response-match python-inf-buf
+          "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
+        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
 
+(ert-deftest npy-integration-test/spawn-two-inferior-python-buffers/check-sys-path ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = 1")
+                             ("project2/foo.py" . "VAR = 2"))
+    (with-file-buffers ("project1/buz.py" "project2/foo.py")
+      (with-current-buffer "buz.py"
+        (npy-run-python))
+      (with-current-buffer "foo.py"
+        (npy-run-python))
+      (npy-helper-wait)
+      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[v:project2]*")))
+        (should-response-match python-inf-buf-1
+          "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
+        (should-response-match python-inf-buf-2
+          "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project2)
+        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
 
 (provide 'npy-test)
 ;;; npy-test.el ends here

@@ -79,11 +79,50 @@ pair is the content for that file."
   "Wait the Python interpreter."
   (sleep-for npy-test/python-wait))
 
-(defun npy-helper-kill-python-inferior-buffer (buffer-or-name)
-  "Kill BUFFER-OR-NAME, which is bound to a Python inferior process."
-  (python-shell-send-string "quit()\n")
-  (npy-helper-wait)
-  (kill-buffer buffer-or-name))
+(defmacro npy-helper-kill-python-inferior-buffers (&rest buffer-or-names)
+  "Kill all of BUFFER-OR-NAMES, which are bound to Python inferior processes."
+  (declare (indent 0))
+  `(progn
+     ,@(mapcar (lambda (buffer-or-name)
+                 `(with-current-buffer ,buffer-or-name
+                    (python-shell-send-string "quit()\n")
+                    (npy-helper-wait)
+                    (kill-buffer ,buffer-or-name)))
+               buffer-or-names)))
+
+(defvar npy-test/match-flag nil
+  "Non-nil means there was at least one successful match.")
+
+(defun npy-helper-match-filter (proc string)
+  "Check if outputs of PROC containg STRING."
+  (when (s-matches-p npy-test/venv-root-for-project1 string)
+    (setq npy-test/match-flag t)))
+
+(defun npy-helper-match-filter (regex string)
+  "Check if outputs of PROC containg STRING."
+  ;;  (write-region (format "string:%s\n" string) nil "/tmp/npy.log" t)
+  (when (s-matches-p regex string)
+    ;;    (write-region (format "%s" string) nil "/tmp/npy.log" t)
+    (setq npy-test/match-flag t)))
+
+(defmacro should-response-match (buffer python-command regex)
+  "Check if the response of PYTHON-COMMAND in BUFFER matches REGEX."
+  (declare (indent 1))
+  `(with-current-buffer ,buffer
+     (let ((npy-test/match-flag nil)
+           (comint-output-filter-functions
+            '(ansi-color-process-output
+              (lambda (output)
+                (npy-helper-match-filter ,regex output))
+              python-shell-comint-watch-for-first-prompt-output-filter
+              python-pdbtrack-comint-output-filter-function
+              python-comint-postoutput-scroll-to-bottom
+              comint-watch-for-password-prompt
+              )))
+       (python-shell-send-string ,python-command)
+       (npy-helper-wait)
+       (should npy-test/match-flag))))
+
 
 
 (provide 'test-helper)
