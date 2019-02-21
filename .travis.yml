@@ -29,7 +29,7 @@ matrix:
 
 script:
   - emacs --version
-  - make test
+  - make check-travis
 
 # Local Variables:
 # indent-tabs-mode: nil

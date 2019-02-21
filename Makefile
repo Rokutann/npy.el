@@ -11,6 +11,9 @@ test: clean-elc delete-playground
 #	${MAKE} clean-elc
 	${MAKE} delete-playground
 
+check-travis: playground
+	sh test/check-travis.sh
+
 unit:
 	${CASK} exec ert-runner
 
