@@ -5,7 +5,7 @@
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
 ;; Keywords: tools, processes
 ;; URL: https://github.com/mukuge/npy-mode.el/
-;; Package-Version: 0.1.2
+;; Package-Version: 0.1.4.d
 ;; Package-Requires: ((emacs "26.1")(f "0.20.0")(s "1.7.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -44,7 +44,7 @@
 ;; spawned multiple inferior Python processes for different
 ;; virtual environments simultaneously.
 
-;; The main entry points are `px-x-run-python', which spawns new
+;; The main entry points are `npy-run-python', which spawns new
 ;; inferior python process with the virtualenv at the current buffer.
 
 ;; Installation:
@@ -580,20 +580,23 @@ This is for the global minor mode version to come."
   (with-eval-after-load "python"
     (add-hook 'python-mode-hook 'npy-mode)))
 
-(defun npy-run-python ()
+(defun npy-run-python (&optional dedicated)
   "Run an inferior python process for a virtualenv.
 
 When called interactively with `prefix-arg', it spawns a
 buffer-dedicated inferior python process with the access to the
 virtualenv."
-  (interactive)
+  (interactive
+   (if current-prefix-arg
+       (list t)
+     (list nil)))
   (npy--force-wait (npy--find-pipenv-virtualenv-root-by-calling))
   (npy--set-pipenv-project-vars)
   (npy--when-valid
    npy--pipenv-virtualenv-root
    (let* ((exec-path (cons npy--pipenv-virtualenv-root exec-path))
           (python-shell-virtualenv-root npy--pipenv-virtualenv-root)
-          (process-name (if current-prefix-arg
+          (process-name (if dedicated
                             (format "%s[v:%s;b:%s]"
                                     python-shell-buffer-name
                                     npy--pipenv-project-name

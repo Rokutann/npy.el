@@ -107,6 +107,17 @@
         (should-not (eq  python-inf-buf nil))
         (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
 
+(ert-deftest npy-integration-test/spawn-a-dedicated-inferior-python-buffer/check-buffer-name ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+    (with-file-buffers ("project1/buz.py")
+      (set-buffer "buz.py")
+      (should (equal npy--pipenv-project-root (@- "project1")))
+      (npy-run-python t)
+      (npy-helper-wait)
+      (let ((python-inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+        (should-not (eq  python-inf-buf nil))
+        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+
 (ert-deftest npy-integration-test/spawn-an-inferior-python-buffer/check-sys-path ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
     (with-file-buffers ("project1/buz.py")
