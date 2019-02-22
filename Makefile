@@ -6,9 +6,9 @@ all: test
 test: clean-elc delete-playground
 	${MAKE} playground
 	${MAKE} unit
-#	${MAKE} compile
-#	${MAKE} unit
-#	${MAKE} clean-elc
+	${MAKE} compile
+	${MAKE} unit
+	${MAKE} clean-elc
 	${MAKE} delete-playground
 
 check-travis: playground
