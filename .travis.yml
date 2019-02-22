@@ -12,6 +12,7 @@ before_install:
   - cask --debug
   - python --version
   - pip --version
+  - pip install --upgrade pip
   - pip install pipenv
 
 env:
