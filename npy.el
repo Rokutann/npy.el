@@ -182,10 +182,14 @@ The value should be 'exploring (default), or 'calling."
   '((pipenv-project-root
      nil
      (lambda ()
-       (if (eql npy-pipenv-project-detection 'exploring)
-           (let* ((filename (buffer-file-name (current-buffer)))
-                  (dirname (f-dirname filename)))
-             (npy--find-pipenv-project-root-by-exploring dirname))
+       (if (eq npy-pipenv-project-detection 'exploring)
+           ;; FIXME: By this if-let, process buffers and dired buffers are classified as 'no-virtualenv
+           ;; It's not harmful practically for now, but it's not nice.
+           (if-let* ((filename (buffer-file-name (current-buffer)))
+                     (dirname (f-dirname filename))
+                     (root (npy--find-pipenv-project-root-by-exploring dirname)))
+               root
+             'no-virtualenv)
          (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
            (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
                  ((stringp pipenv-res) 'no-virtualenv)
@@ -521,7 +525,7 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
 
 ;;; Functions to manage the modeline.
 
-(defun npy-default-mode-line ()
+(defun npy-default-mode-line- ()
   "Report the Pipenv project name associated with the buffer in the modeline."
   (npy--set-pipenv-project-vars)
   (format "%s[v:%s]"
@@ -529,6 +533,12 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
           (cond ((stringp npy--pipenv-project-root) npy--pipenv-project-name)
                 ((eq npy--pipenv-project-root 'no-virtualenv) npy-no-virtualenv-mark)
                 (t "ERR"))))
+
+(defun npy-default-mode-line ()
+  "Report the Pipenv project name associated with the buffer in the modeline."
+  (format "%s[v:%s]"
+          npy-mode-line-prefix
+          (gpc-get 'pipenv-project-name npy-env)))
 
 (defun npy--update-mode-line ()
   "Update the npy modeline."
@@ -593,18 +603,13 @@ This is for the global minor mode version to come."
            python-shell-virtualenv-root
            npy--python-shell-virtualenv-root-log))
 
-(defun npy--clear-pipenv-vars ()
-  "Clear Pipenv project information."
-  (interactive)
-  (npy--clear-all-pipenv-project-vars)
-  (npy--show-pipenv-vars))
-
 ;;;
 ;;; User facing functions and its helpers.
 ;;;
 
 (defmacro npy--when-valid (var it)
   "Do IT when VAR is valid, otherwise show a warning."
+  (declare (indent 1))
   `(cond ((stringp ,var)
           ,it)
          ((eq ,var 'no-virtualenv)
@@ -628,53 +633,51 @@ virtualenv."
    (if current-prefix-arg
        (list t)
      (list nil)))
-  (npy--force-wait (npy--find-pipenv-virtualenv-root-by-calling))
-  (npy--set-pipenv-project-vars)
+  (gpc-fetch-all npy-env)
   (npy--when-valid
-   npy--pipenv-virtualenv-root
-   (let* ((exec-path (cons npy--pipenv-virtualenv-root exec-path))
-          (python-shell-virtualenv-root npy--pipenv-virtualenv-root)
-          (process-name (if dedicated
-                            (format "%s[v:%s;b:%s]"
-                                    python-shell-buffer-name
-                                    npy--pipenv-project-name
-                                    (f-filename (buffer-file-name)))
-                          (format "%s[v:%s]"
-                                  python-shell-buffer-name
-                                  npy--pipenv-project-name))))
-     (push python-shell-virtualenv-root npy--python-shell-virtualenv-root-log)
-     (get-buffer-process
-      (python-shell-make-comint (python-shell-calculate-command)
-                                process-name t)))))
+      (gpc-val 'pipenv-virtualenv-root npy-env)
+    (let* ((venv-root (gpc-val 'pipenv-virtualenv-root npy-env))
+           (prj-name (gpc-val 'pipenv-project-name npy-env))
+           (exec-path (cons venv-root exec-path))
+           (python-shell-virtualenv-root venv-root)
+           (process-name (if dedicated
+                             (format "%s[v:%s;b:%s]"
+                                     python-shell-buffer-name
+                                     prj-name
+                                     (f-filename (buffer-file-name)))
+                           (format "%s[v:%s]"
+                                   python-shell-buffer-name
+                                   prj-name))))
+      (push python-shell-virtualenv-root npy--python-shell-virtualenv-root-log)
+      (get-buffer-process
+       (python-shell-make-comint (python-shell-calculate-command)
+                                 process-name t)))))
 
 (defun npy-display-pipenv-project-root ()
   "Show the path to the Pipenv project root directory."
   (interactive)
-  (npy--set-pipenv-project-vars)
   (npy--update-mode-line)
-  (npy--when-valid
-   npy--pipenv-project-root
-   (message "Project: %s" npy--pipenv-project-root)))
+  (npy--when-valid (gpc-get 'pipenv-project-root npy-env)
+    (message "Project: %s" (gpc-get 'pipenv-project-root npy-env))))
 
 (defun npy-update-pipenv-project-root ()
   "Update the Pipenv project root directory."
   (interactive)
-  (npy--fill-pipenv-project-names nil)
+  (gpc-fetch 'pipenv-project-root npy-env)
   (npy-display-pipenv-project-root))
 
 (defun npy-display-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
-  (npy--set-pipenv-virtualenv-root-var)
   (npy--update-mode-line)
   (npy--when-valid
-   npy--pipenv-virtualenv-root
-   (message "Virtualenv: %s" npy--pipenv-virtualenv-root)))
+      (gpc-get 'pipenv-virtualenv-root npy-env)
+    (message "Virtualenv: %s" (gpc-get 'pipenv-virtualenv-root npy-env))))
 
 (defun npy-update-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
-  (npy--clear-all-pipenv-project-vars)
+  (gpc-fetch 'pipenv-virtualenv-root npy-env)
   (npy-display-pipenv-virtualenv-root))
 
 (defun npy-pipenv-shell ()
