@@ -1,7 +1,4 @@
-language: python
-python:
-  - "3.6"
-
+language: ruby
 install:
   - pip install pipenv
 
@@ -13,6 +10,9 @@ before_install:
   - curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > x.sh && source ./x.sh
   - evm install $EVM_EMACS --use --skip
   - cask --debug
+  - python --version
+  - pip --version
+  - pip install pipenv
 
 env:
   #- EVM_EMACS=emacs-24.4-travis

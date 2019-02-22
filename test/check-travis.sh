@@ -1,9 +1,3 @@
-echo "The default venv:"
-pipenv --where
-pipenv --venv
-echo "Exiting from the default venv..."
-exit
-
 echo "project1:"
 (cd /tmp/npy-playground/project1/ && pipenv --where)
 (cd /tmp/npy-playground/project1/ && pipenv --venv)
