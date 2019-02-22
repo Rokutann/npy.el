@@ -1,4 +1,6 @@
-## Synopsis [![Build Status](https://travis-ci.org/mukuge/npy.el.svg?branch=new%2Fgpc)](https://travis-ci.org/mukuge/npy.el)
+[![Build Status](https://travis-ci.org/mukuge/npy.el.svg?branch=new%2Fgpc)](https://travis-ci.org/mukuge/npy.el)
+
+## Synopsis
 
 **npy.el** is a set of nano (or minimalistic) extensions to the Python development 
 support in Emacs. Its first goal is to provide a nice integration
