@@ -4,6 +4,10 @@
 
 * Rewriting with `gpc.el`.
 
+### Changes
+
+* Changed `nalist-initialize` from a function to a macro.
+
 ## 0.1.4 (2019-02-22)
 
 ### Changes

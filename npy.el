@@ -61,7 +61,9 @@
 ;;;
 
 (require 'cl-lib)
+(require 'gpc)
 (require 'f)
+(require 'nalist)
 (require 'python)
 (require 's)
 (require 'subr-x)
@@ -175,6 +177,49 @@ The value should be 'exploring (default), or 'calling."
 (defvar-local npy--mode-line npy-mode-line-prefix)
 
 ;;; Pipenv project and virtualenv core vars and their access functionss.
+
+;; (defcache npy-env :buffer-local
+;;   "The gpc cache to store Python enviroment information per buffer."
+;;   (pipenv-project-root nil nil)
+;;   (pipenv-project-name nil nil)
+;;   (pipenv-project-name-with-hash nil nil)
+;;   (pipenv-virtualenv-root nil nil))
+
+(gpc-init npy-env
+  '((pipenv-project-root
+     nil
+     (lambda ()
+       (if (eql npy-pipenv-project-detection 'exploring)
+           (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
+             (cond ((and (stringp pipenv-res) (f-file-p pipenv-res)) pipenv-res)
+                   ((stringp pipenv-res) 'no-virtualenv)
+                   (t 'ERR)))
+         (let* ((filename (buffer-file-name (current-buffer)))
+                (dirname (f-dirname filename)))
+           (npy--find-pipenv-project-root-by-exploring dirname)))))
+    (pipenv-project-name
+     nil
+     (lambda ()
+       (let ((root (gpc-fetch 'pipenv-project-root npy-env)))
+         (cond ((stringp root) (f-name root))
+               ((eq root 'no-virtualenv) 'no-virtualenv)
+               (t 'ERR)))))
+    (pipenv-project-name-with-hash
+     nil
+     (lambda ()
+       (let ((root (gpc-fetch 'pipenv-project-root npy-env)))
+         (cond ((stringp root) (npy--pipenv-get-name-with-hash root))
+               ((eq root 'no-virtualenv) 'no-virtualenv)
+               (t 'ERR)))))
+    (pipenv-virtualenv-root
+     nil
+     (lambda ()
+       (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
+         (cond ((and (stringp pipenv-res) (f-file-p pipenv-res)) pipenv-res)
+               ((stringp pipenv-res) 'no-virtualenv)
+               (t 'ERR)))))))
+
+(gpc-make-variable-buffer-local npy-env)
 
 (defvar-local npy--pipenv-project-root nil
   "The root directory of the Pipenv project.")
@@ -343,7 +388,7 @@ if it's longer than 42."
       (cl-incf counter))
     (when (>= counter 10)
       (npy--debug "The npy--force-wait limit has reached.")
-      ;; FIXME: Might better to rase an exception.
+      ;; FIXME: Might be better to rase an exception.
       )))
 
 (defun npy--make-pipenv-process (command &optional filter sentinel)
@@ -575,10 +620,10 @@ This is for the global minor mode version to come."
             (message "No virtualenv got deteced. Maybe because the buffer is not associated with a file.")))
          (t (message "Something wrong has happend in npy."))))
 
-(defun npy-initialize ()
+(defmacro npy-initialize ()
   "Initialize npy-mode."
-  (with-eval-after-load "python"
-    (add-hook 'python-mode-hook 'npy-mode)))
+  `(with-eval-after-load "python"
+     (add-hook 'python-mode-hook 'npy-mode)))
 
 (defun npy-run-python (&optional dedicated)
   "Run an inferior python process for a virtualenv.
