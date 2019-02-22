@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4 (wip)
+
+### Changes
+
+* Added an optional argument `dedicated` to `npy-run-python`.
+* Added testing.
+
 ## 0.1.3 (2019-02-04)
 
 ### Changes
