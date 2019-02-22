@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5.d (wip)
+
+* Rewriting with `gpc.el`.
+
 ## 0.1.4 (2019-02-22)
 
 ### Changes
