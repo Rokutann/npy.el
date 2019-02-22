@@ -1,6 +1,4 @@
 language: ruby
-install:
-  - pip install pipenv
 
 cache:
   directories:
@@ -29,7 +27,7 @@ matrix:
 
 script:
   - emacs --version
-  - make check-travis
+  - make test
 
 # Local Variables:
 # indent-tabs-mode: nil
