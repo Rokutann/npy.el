@@ -178,30 +178,23 @@ The value should be 'exploring (default), or 'calling."
 
 ;;; Pipenv project and virtualenv core vars and their access functionss.
 
-;; (defcache npy-env :buffer-local
-;;   "The gpc cache to store Python enviroment information per buffer."
-;;   (pipenv-project-root nil nil)
-;;   (pipenv-project-name nil nil)
-;;   (pipenv-project-name-with-hash nil nil)
-;;   (pipenv-virtualenv-root nil nil))
-
 (gpc-init npy-env
   '((pipenv-project-root
      nil
      (lambda ()
        (if (eql npy-pipenv-project-detection 'exploring)
-           (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
-             (cond ((and (stringp pipenv-res) (f-file-p pipenv-res)) pipenv-res)
-                   ((stringp pipenv-res) 'no-virtualenv)
-                   (t 'ERR)))
-         (let* ((filename (buffer-file-name (current-buffer)))
-                (dirname (f-dirname filename)))
-           (npy--find-pipenv-project-root-by-exploring dirname)))))
+           (let* ((filename (buffer-file-name (current-buffer)))
+                  (dirname (f-dirname filename)))
+             (npy--find-pipenv-project-root-by-exploring dirname))
+         (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
+           (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
+                 ((stringp pipenv-res) 'no-virtualenv)
+                 (t 'ERR))))))
     (pipenv-project-name
      nil
      (lambda ()
        (let ((root (gpc-fetch 'pipenv-project-root npy-env)))
-         (cond ((stringp root) (f-name root))
+         (cond ((stringp root) (f-filename root))
                ((eq root 'no-virtualenv) 'no-virtualenv)
                (t 'ERR)))))
     (pipenv-project-name-with-hash
@@ -215,7 +208,7 @@ The value should be 'exploring (default), or 'calling."
      nil
      (lambda ()
        (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
-         (cond ((and (stringp pipenv-res) (f-file-p pipenv-res)) pipenv-res)
+         (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
                ((stringp pipenv-res) 'no-virtualenv)
                (t 'ERR)))))))
 
