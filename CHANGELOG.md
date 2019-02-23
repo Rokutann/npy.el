@@ -4,6 +4,10 @@
 
 * Rewriting with `gpc.el`.
 
+### New features
+
+* Added a scratch buffer facility for Pipenv virtualenvs. You can spawn a scratch buffer bound to a Pipenv virtualenv by calling `npy-scratch`.
+
 ### Changes
 
 * Changed `nalist-initialize` from a function to a macro.
