@@ -349,6 +349,11 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
 
 ;;; Functions for the integrations with the inferior python mode.
 
+;;;###autoload
+(defvar npy-scratch-buffer nil
+  "Non-nil if the current buffer is a scratch buffer.")
+(make-variable-buffer-local 'npy-scratch-buffer)
+
 (defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
   "Tweak the buffer entity in ORIG-ARGS.
 
@@ -362,6 +367,35 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                      (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
                              prj-name
                              (f-filename (buffer-file-name))))
+                    (venv-dedicated-process-name (format "*%s[v:%s]*"
+                                                         python-shell-buffer-name
+                                                         prj-name)))
+              (if-let (venv-dedicated-buffer-running
+                       (comint-check-proc venv-dedicated-buffer-process-name))
+                  venv-dedicated-buffer-process-name
+                (if-let (venv-dedicated-running
+                         (comint-check-proc venv-dedicated-process-name))
+                    venv-dedicated-process-name
+                  (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
+                    res))))
+        (let ((res (apply orig-fun orig-args)))
+          res)))))
+
+(defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
+  "Tweak the buffer entity in ORIG-ARGS.
+
+Replace it with the inferior process for the project exists, otherwise
+leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
+  (if (derived-mode-p 'inferior-python-mode)
+      (current-buffer)
+    (let ((prj-name (gpc-get 'pipenv-project-name npy-env)))
+      (if (stringp prj-name) ;; i.e. it's not 'no-virtualenv nor nil.
+          (if-let* ((venv-dedicated-buffer-process-name
+                     (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
+                             prj-name
+                             (f-filename (buffer-file-name
+                                          (when npy-scratch-buffer
+                                            npy-scratch-parent)))))
                     (venv-dedicated-process-name (format "*%s[v:%s]*"
                                                          python-shell-buffer-name
                                                          prj-name)))
@@ -462,7 +496,8 @@ virtualenv."
   (gpc-fetch-all npy-env)
   (npy--when-valid
       (gpc-val 'pipenv-virtualenv-root npy-env)
-    (let* ((venv-root (gpc-val 'pipenv-virtualenv-root npy-env))
+    (let* ((parent (current-buffer))
+           (venv-root (gpc-val 'pipenv-virtualenv-root npy-env))
            (prj-name (gpc-val 'pipenv-project-name npy-env))
            (exec-path (cons venv-root exec-path))
            (python-shell-virtualenv-root venv-root)
@@ -475,9 +510,14 @@ virtualenv."
                                    python-shell-buffer-name
                                    prj-name))))
       (push python-shell-virtualenv-root npy--python-shell-virtualenv-root-log)
-      (get-buffer-process
-       (python-shell-make-comint (python-shell-calculate-command)
-                                 process-name t)))))
+      (prog1
+          (pop-to-buffer
+           (python-shell-make-comint (python-shell-calculate-command)
+                                     process-name t))
+        (unless npy-shell-initialized
+          (gpc-copy npy-env parent (current-buffer))
+          (gpc-lock npy-env)
+          (setq npy-shell-initialized t))))))
 
 (defun npy-display-pipenv-project-root ()
   "Show the path to the Pipenv project root directory."
@@ -537,6 +577,10 @@ virtualenv."
   "The parent of this scratch buffer.")
 (make-variable-buffer-local 'npy-scratch-parent)
 
+(defvar npy-shell-initialized nil
+  "Non-nil means the inferior buffer is already initialized.")
+(make-variable-buffer-local 'npy-shell-initialized)
+
 (defun npy-scratch (&optional dedicated)
   "Get a scratch buffer for the current mode.
 
@@ -562,15 +606,17 @@ the buffer spawning it."
            (let ((contents (when (region-active-p)
                              (buffer-substring-no-properties
                               (region-beginning) (region-end)))))
-             (with-current-buffer parent
-               (gpc-fetch-all npy-env))
+             (gpc-fetch-all npy-env)
              (setq buf (get-buffer-create name))
              (pop-to-buffer buf)
-             (message "a: %s" npy-env)
              (funcall mode)
+             ;; Any variable assignments before this
+             ;; call in this buffer get reset by this
+             ;; call.
+             (setq npy-scratch-buffer t)
              (gpc-copy npy-env parent buf)
              (gpc-lock npy-env)
-             (message "b: %s" npy-env)
+             (npy--update-mode-line)
              (when contents (save-excursion (insert contents)))
              (unless current-prefix-arg
                (setq npy-scratch-parent parent)))))))
