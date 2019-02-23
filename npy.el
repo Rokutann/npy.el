@@ -349,7 +349,6 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
 
 ;;; Functions for the integrations with the inferior python mode.
 
-;;;###autoload
 (defvar npy-scratch-buffer nil
   "Non-nil if the current buffer is a scratch buffer.")
 (make-variable-buffer-local 'npy-scratch-buffer)
@@ -601,9 +600,8 @@ the buffer spawning it."
                (setq buf (get-buffer-create name))
                (pop-to-buffer buf)
                (funcall mode)
-               ;; Any variable assignments before this
-               ;; call in this buffer get reset by this
-               ;; call.
+               ;; Any variable assignments before this call in this
+               ;; buffer get reset by this call.
                (setq npy-scratch-buffer t)
                (gpc-copy npy-env parent buf)
                (gpc-lock npy-env)
