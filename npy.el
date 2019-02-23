@@ -218,45 +218,12 @@ The value should be 'exploring (default), or 'calling."
 
 (gpc-make-variable-buffer-local npy-env)
 
-(defvar-local npy--pipenv-project-root nil
-  "The root directory of the Pipenv project.")
-
-(defvar-local npy--pipenv-project-name nil
-  "The Pipenv project name or the name of the directory where Pipfile exists.")
-
-(defvar-local npy--pipenv-project-name-with-hash nil
-  "The Pipenv project name with hash.")
-
-(defvar-local npy--pipenv-virtualenv-root nil
-  "The virtualenv root directory of the Pipenv project.")
-
 (defun npy--pipenv-get-name-with-hash (path)
   "Return the filename of PATH with a Pipenv hash suffix."
   (f-filename (npy-pipenv-compat-virtualenv-name path)))
 
-(defun npy--fill-pipenv-project-names (root)
-  "Fill the Pipenv project name vars by using ROOT."
-  (cond ((and (stringp root) (f-directory-p root))
-         (setq npy--pipenv-project-root root
-               npy--pipenv-project-name (f-filename root)
-               npy--pipenv-project-name-with-hash (npy--pipenv-get-name-with-hash root)))
-        ((eql root 'no-virtualenv)
-         (setq npy--pipenv-project-root 'no-virtualenv
-               npy--pipenv-project-name 'no-virtualenv
-               npy--pipenv-project-name-with-hash 'no-virtualenv))
-        ((null root)
-         (setq npy--pipenv-project-root nil
-               npy--pipenv-project-name nil
-               npy--pipenv-project-name-with-hash nil))
-        (t (message "\"%s\" is not a valid value." root))))
-
-(defun npy--fill-pipenv-virtualenv-root (venv-path)
-  "Fill the Pipenv virtualenv root var with VENV-PATH."
-  (cl-case venv-path
-    (nil (setq npy--pipenv-virtualenv-root nil))
-    ('no-virtualenv (setq npy--pipenv-virtualenv-root 'no-virtualenv))
-    (otherwise (setq npy--pipenv-virtualenv-root venv-path))))
-
+;; FIXME: Need to check the Pipenv source what value .project contains
+;; when PIPENV_VENV_IN_PROJECT is set.
 (defun npy--get-pipenv-project-root-from-dotproject (venv-path)
   "Get the Pipenv project root from the `.project' file in VENV-PATH."
   (when (and (stringp venv-path)
@@ -265,6 +232,8 @@ The value should be 'exploring (default), or 'calling."
       (insert-file-contents (concat venv-path "/.project") nil)
       (buffer-string))))
 
+;; FIXME: Need to check the Pipenv source what value .project contains
+;; when PIPENV_VENV_IN_PROJECT is set.
 (defun npy--set-pipenv-project-vars-from-dotproject (venv-path)
   "Set the Pipenv project root and names from the `.project' file in VENV-PATH."
   (if-let* ((root (npy--get-pipenv-project-root-from-dotproject venv-path)))
@@ -273,14 +242,6 @@ The value should be 'exploring (default), or 'calling."
           (npy--fill-pipenv-project-names root))
     (npy--fill-pipenv-project-names 'no-virtualenv)
     (message "\"%s\" is not a virtualenv root.")))
-
-(defun npy--venvpath-to-prjname (venvpath)
-  "Extract a project name from VENVPATH or a virtualenv path."
-  (nth 1 (s-match "/\\([^/]*\\)-........$" venvpath)))
-
-(defun npy--venvpath-to-prjroot (venvpath)
-  "Extract a project root from VENVPATH or a virtualenv path."
-  (nth 1 (s-match "\\(/.*\\)-........$" venvpath)))
 
 ;;; Pipenv compatibility functions.
 
@@ -364,110 +325,13 @@ if it's longer than 42."
       (npy-pipenv-compat--get-virtualenv-hash name)
     (concat sanitized "-" encoded-hash)))
 
-;;; Functions to call the `pipenv' executable.
-
-(defun npy--clean-response (response)
-  "Clean up RESPONSE from shell command."
-  (s-chomp response))
-
-(defun npy--force-wait (process)
-  "Block while PROCESS exists but release after one sec anyway."
-  (let ((counter 0))
-    (while (and (process-live-p process)
-                (< counter 10))
-      (sit-for 0.1 t)
-      (cl-incf counter))
-    (when (>= counter 10)
-      (npy--debug "The npy--force-wait limit has reached.")
-      ;; FIXME: Might be better to rase an exception.
-      )))
-
-(defun npy--make-pipenv-process (command &optional filter sentinel)
-  "Make a Pipenv process from COMMAND; optional custom FILTER or SENTINEL."
-  (make-process
-   :name npy-command-process-name
-   :buffer npy-command-process-buffer-name
-   :command command
-   :coding 'utf-8-unix
-   :filter filter
-   :sentinel sentinel))
-
-;;; Functions to find Pipenv information by calling the `pipenv' exectable.
-
-(defun npy--process-filter-for-venv(process response)
-  "PROCESS filter for '--venv' to set the variables based on RESPONSE."
-  (npy--debug "response: %s" response)
-  (npy--debug "matched responce: %s" (s-match "\\(/.*\\)
-" response))
-  (when (s-equals-p (nth 0 (last (process-command process))) "--venv")
-    (if-let* ((res (s-match "\\(/.*\\)
-" response))
-              (path (nth 1 res))
-              (f-directory-p path))
-        (progn
-          (npy--fill-pipenv-virtualenv-root path)
-          (npy--set-pipenv-project-vars-from-dotproject path))
-      (if (s-match "No virtualenv has been created for this project yet!" response)
-          (npy--fill-pipenv-virtualenv-root 'no-virtualenv)))))
-
-(defun npy--process-filter-for-where(process response)
-  "PROCESS filter for '--where' to set the variables based on RESPONSE."
-  (npy--debug "response: %s" response)
-  (npy--debug "matched responce: %s" (s-match "\\(/.*\\)
-" response))
-  (when (s-equals-p (nth 0 (last (process-command process))) "--where")
-    (if-let* ((res (s-match "\\(/.*\\)
-" response))
-              (path (nth 1 res))
-              (f-directory-p path))
-        (npy--fill-pipenv-project-names path))
-    (if (s-match "No Pipfile at project home." response)
-        (npy--fill-pipenv-project-names 'no-virtualenv))))
-
-(defun npy--find-pipenv-virtualenv-root-by-calling ()
-  "Call `pipenv' with '--venv' to get the path to the virtualenv root."
-  (let ((command (list npy-pipenv-executable "--venv"))
-        (filter 'npy--process-filter-for-venv))
-    (npy--make-pipenv-process command filter)))
-
-(defun npy--find-pipenv-project-root-by-calling ()
-  "Call `pipenv' with '--where' to get the Pipenv project root."
-  (let ((command (list npy-pipenv-executable "--where"))
-        (filter 'npy--process-filter-for-where))
-    (npy--make-pipenv-process command filter)))
-
-(defun npy--set-pipenv-project-vars-by-calling ()
-  "Set the Pipenv project root variables by calling `pipenv'."
-  (if (null npy--pipenv-project-root)
-      (npy--force-wait (npy--find-pipenv-project-root-by-calling))
-    npy--pipenv-project-root))
-
-(defun npy--set-pipenv-virtualenv-root-var-by-calling ()
-  "Set the Pipenv virtualenv root variable by calling `pipenv'."
-  (if (null npy--pipenv-virtualenv-root)
-      (npy--force-wait (npy--find-pipenv-virtualenv-root-by-calling))
-    npy--pipenv-virtualenv-root))
-
-(defun npy--set-pipenv-project-vars ()
-  "Interface function to set the Pipenv project vars."
-  (if (eql npy-pipenv-project-detection 'exploring)
-      (npy--set-pipenv-project-vars-by-exploring)
-    (npy--set-pipenv-project-vars-by-calling)))
-
 ;;; Functions to find Pipenv information by exploring directory structures.
-
-(defun npy--set-pipenv-project-vars-by-exploring ()
-  "Set the Pipenv project variables by exploring its path bottom-up."
-  (if-let* ((filename (buffer-file-name (current-buffer)))
-            (dirname (f-dirname filename))
-            (root (npy--find-pipenv-project-root-by-exploring dirname)))
-      (npy--fill-pipenv-project-names root)
-    (npy--fill-pipenv-project-names 'no-virtualenv)))
 
 (defun npy--find-pipenv-project-root-by-exploring (dirname)
   "Return the Pipenv project root if DIRNAME is under a project, otherwise nil."
   (npy--find-pipenv-project-root-by-exploring-impl (f-split (f-full dirname))))
 
+;; FIXME: Should rewite this as a non-recursive function.
 (defun npy--find-pipenv-project-root-by-exploring-impl (dirname-list)
   "Return a Pipenv root if DIRNAME-LIST is under a project, otherwise nil.
 
@@ -478,7 +342,6 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
       (if (npy--pipenv-root-p dirname)
           dirname
         (npy--find-pipenv-project-root-by-exploring-impl (nbutlast dirname-list 1))))))
-;; FIXME: Should rewite this as a non-recursive function.
 
 (defun npy--pipenv-root-p (dirname)
   "Return t if DIRNAME is a Pipenv project root, otherwise nil."
@@ -565,23 +428,6 @@ to detect Pipenv virtualenvs implemented.
 This is for the global minor mode version to come."
   (npy-mode 0))
 
-;;; Functions for debug.
-
-(defun npy--show-pipenv-vars ()
-  "Show Pipenv project information."
-  (interactive)
-  (message (concat "pipenv-project-root: %s\n"
-                   "pipenv-project-name: %s\n"
-                   "pipenv-project-name-with-hash: %s\n"
-                   "pipenv-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root-log: %s")
-           npy--pipenv-project-root
-           npy--pipenv-project-name
-           npy--pipenv-project-name-with-hash
-           npy--pipenv-virtualenv-root
-           python-shell-virtualenv-root
-           npy--python-shell-virtualenv-root-log))
 
 ;;;
 ;;; User facing functions and its helpers.
@@ -670,6 +516,22 @@ virtualenv."
     (setq-local comint-process-echoes t)
     (comint-send-input)
     (comint-clear-buffer)))
+
+(defun npy-show-python-environment ()
+  "Show Python environment information."
+  (interactive)
+  (message (concat "pipenv-project-root: %s\n"
+                   "pipenv-project-name: %s\n"
+                   "pipenv-project-name-with-hash: %s\n"
+                   "pipenv-virtualenv-root: %s\n"
+                   "python-shell-virtualenv-root: %s\n"
+                   "python-shell-virtualenv-root-log: %s")
+           (gpc-val 'pipenv-project-root npy-env)
+           (gpc-val 'pipenv-project-name npy-env)
+           (gpc-val 'pipenv-project-name-with-hash npy-env)
+           (gpc-val 'pipenv-virtualenv-root npy-env)
+           python-shell-virtualenv-root
+           npy--python-shell-virtualenv-root-log))
 
 ;;; Defining the minor mode.
 
