@@ -218,6 +218,22 @@ The value should be 'exploring (default), or 'calling."
 
 (gpc-make-variable-buffer-local npy-env)
 
+(defvar npy-scratch-buffer nil
+  "Non-nil if the current buffer is a scratch buffer.")
+(make-variable-buffer-local 'npy-scratch-buffer)
+
+(defvar npy-scratch-parent nil
+  "The parent of this scratch buffer.")
+(make-variable-buffer-local 'npy-scratch-parent)
+
+(defvar npy-shell-initialized nil
+  "Non-nil means the inferior buffer is already initialized.")
+(make-variable-buffer-local 'npy-shell-initialized)
+
+(defvar npy-shell-dedicated-to nil
+  "The buffer which this buffer is dedicated to.")
+(make-variable-buffer-local 'npy-shell-dedicated-to)
+
 (defun npy--pipenv-get-name-with-hash (path)
   "Return the filename of PATH with a Pipenv hash suffix."
   (f-filename (npy-pipenv-compat-virtualenv-name path)))
@@ -348,10 +364,6 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
   (f-exists-p (concat (f-full dirname) "/Pipfile")))
 
 ;;; Functions for the integrations with the inferior python mode.
-
-(defvar npy-scratch-buffer nil
-  "Non-nil if the current buffer is a scratch buffer.")
-(make-variable-buffer-local 'npy-scratch-buffer)
 
 (defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
   "Tweak the buffer entity in ORIG-ARGS.
@@ -534,34 +546,6 @@ virtualenv."
     (comint-send-input)
     (comint-clear-buffer)))
 
-(defun npy-show-python-environment ()
-  "Show Python environment information."
-  (interactive)
-  (message (concat "pipenv-project-root: %s\n"
-                   "pipenv-project-name: %s\n"
-                   "pipenv-project-name-with-hash: %s\n"
-                   "pipenv-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root-log: %s")
-           (gpc-val 'pipenv-project-root npy-env)
-           (gpc-val 'pipenv-project-name npy-env)
-           (gpc-val 'pipenv-project-name-with-hash npy-env)
-           (gpc-val 'pipenv-virtualenv-root npy-env)
-           python-shell-virtualenv-root
-           npy--python-shell-virtualenv-root-log))
-
-(defvar npy-scratch-parent nil
-  "The parent of this scratch buffer.")
-(make-variable-buffer-local 'npy-scratch-parent)
-
-(defvar npy-shell-initialized nil
-  "Non-nil means the inferior buffer is already initialized.")
-(make-variable-buffer-local 'npy-shell-initialized)
-
-(defvar npy-shell-dedicated-to nil
-  "The buffer which this buffer is dedicated to.")
-(make-variable-buffer-local 'npy-shell-dedicated-to)
-
 (defun npy-scratch (&optional dedicated)
   "Get a scratch buffer for the current mode.
 
@@ -609,6 +593,22 @@ the buffer spawning it."
                (when contents (save-excursion (insert contents)))
                (unless current-prefix-arg
                  (setq npy-scratch-parent parent))))))))
+
+(defun npy-show-python-environment ()
+  "Show Python environment information."
+  (interactive)
+  (message (concat "pipenv-project-root: %s\n"
+                   "pipenv-project-name: %s\n"
+                   "pipenv-project-name-with-hash: %s\n"
+                   "pipenv-virtualenv-root: %s\n"
+                   "python-shell-virtualenv-root: %s\n"
+                   "python-shell-virtualenv-root-log: %s")
+           (gpc-val 'pipenv-project-root npy-env)
+           (gpc-val 'pipenv-project-name npy-env)
+           (gpc-val 'pipenv-project-name-with-hash npy-env)
+           (gpc-val 'pipenv-virtualenv-root npy-env)
+           python-shell-virtualenv-root
+           npy--python-shell-virtualenv-root-log))
 
 ;;; Defining the minor mode.
 
