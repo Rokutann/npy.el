@@ -226,6 +226,10 @@ The value should be 'exploring (default), or 'calling."
   "The parent of this scratch buffer.")
 (make-variable-buffer-local 'npy-scratch-parent)
 
+(defvar npy-scratch-dedicated nil
+  "Non-nil means the scratch buffer is dedicated to a `python-mode' buffer.")
+(make-variable-buffer-local 'npy-scratch-dedicated)
+
 (defvar npy-shell-initialized nil
   "Non-nil means the inferior buffer is already initialized.")
 (make-variable-buffer-local 'npy-shell-initialized)
@@ -371,7 +375,7 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
 Replace it with the inferior process for the project exists, otherwise
 leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
   (let ((prj-name (gpc-get 'pipenv-project-name npy-env))
-        (file-path (cond (npy-scratch-parent
+        (file-path (cond (npy-scratch-dedicated
                           (buffer-file-name npy-scratch-parent))
                          (npy-scratch-buffer nil)
                          (t (buffer-file-name)))))
@@ -508,6 +512,50 @@ virtualenv."
           (gpc-lock npy-env)
           (setq npy-shell-initialized t))))))
 
+(defun npy-run-python (&optional dedicated)
+  "Run an inferior python process for a virtualenv.
+
+When called interactively with `prefix-arg', it spawns a
+buffer-dedicated inferior python process with the access to the
+virtualenv."
+  (interactive
+   (if current-prefix-arg
+       (list t)
+     (list nil)))
+  (gpc-fetch-all npy-env)
+  (npy--when-valid
+      (gpc-val 'pipenv-virtualenv-root npy-env)
+    (let* ((parent (current-buffer))
+           (venv-root (gpc-val 'pipenv-virtualenv-root npy-env))
+           (prj-name (gpc-val 'pipenv-project-name npy-env))
+           (exec-path (cons venv-root exec-path))
+           (python-shell-virtualenv-root venv-root)
+           (process-name (cond ((and dedicated npy-scratch-buffer)
+                                (format "%s[v:%s;b:%s]"
+                                        python-shell-buffer-name
+                                        prj-name
+                                        (f-filename (buffer-file-name npy-scratch-parent))))
+                               (dedicated (format "%s[v:%s;b:%s]"
+                                                  python-shell-buffer-name
+                                                  prj-name
+                                                  (f-filename (buffer-file-name))))
+                               (t (format "%s[v:%s]"
+                                          python-shell-buffer-name
+                                          prj-name)))))
+      ;;(push python-shell-virtualenv-root npy--python-shell-virtualenv-root-log)
+      (when (and dedicated npy-scratch-buffer)
+        (setq npy-scratch-dedicated t))
+      (prog1
+          (pop-to-buffer
+           (python-shell-make-comint (python-shell-calculate-command)
+                                     process-name t))
+        (when dedicated
+          (setq npy-shell-dedicated-to parent))
+        (unless npy-shell-initialized
+          (gpc-copy npy-env parent (current-buffer))
+          (gpc-lock npy-env)
+          (setq npy-shell-initialized t))))))
+
 (defun npy-display-pipenv-project-root ()
   "Show the path to the Pipenv project root directory."
   (interactive)
@@ -559,7 +607,11 @@ the buffer spawning it."
     (unless (stringp prj-name)
       (error "You are not in a buffer associated with a Pipenv project: %s" prj-name))
     (let* ((tmp) (name)
-           (parent (current-buffer))
+           (parent (cond ((and (derived-mode-p 'inferior-python-mode)
+                               npy-shell-dedicated-to
+                               dedicated)
+                          npy-shell-dedicated-to)
+                         (t (current-buffer))))
            (mode 'python-mode)
            (name (cond ((and (derived-mode-p 'inferior-python-mode)
                              npy-shell-dedicated-to
@@ -591,7 +643,10 @@ the buffer spawning it."
                (gpc-lock npy-env)
                (npy--update-mode-line)
                (when contents (save-excursion (insert contents)))
-               (unless current-prefix-arg
+               (when dedicated
+                 (setq npy-scratch-dedicated t))
+               (if (and (derived-mode-p 'inferior-python-mode) npy-shell-dedicated-to)
+                   (setq npy-scratch-parent npy-shell-dedicated-to)
                  (setq npy-scratch-parent parent))))))))
 
 (defun npy-show-python-environment ()

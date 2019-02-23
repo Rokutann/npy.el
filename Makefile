@@ -17,6 +17,9 @@ check-travis: playground
 unit:
 	${CASK} exec ert-runner
 
+new-test:
+	${CASK} exec ert-runner test/npy-new-test.el
+
 compile:
 	${CASK} exec ${EMACS} -Q -batch -f batch-byte-compile npy.el
 
