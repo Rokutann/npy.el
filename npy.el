@@ -257,12 +257,6 @@ The value should be 'exploring (default), or 'calling."
     ('no-virtualenv (setq npy--pipenv-virtualenv-root 'no-virtualenv))
     (otherwise (setq npy--pipenv-virtualenv-root venv-path))))
 
-(defun npy--clear-all-pipenv-project-vars ()
-  "Clear all Pipenv project vars."
-  (npy--fill-pipenv-project-names nil)
-  (npy--fill-pipenv-virtualenv-root nil)
-  (setq npy--python-shell-virtualenv-root-log nil))
-
 (defun npy--get-pipenv-project-root-from-dotproject (venv-path)
   "Get the Pipenv project root from the `.project' file in VENV-PATH."
   (when (and (stringp venv-path)
@@ -460,10 +454,6 @@ if it's longer than 42."
       (npy--set-pipenv-project-vars-by-exploring)
     (npy--set-pipenv-project-vars-by-calling)))
 
-(defun npy--set-pipenv-virtualenv-root-var ()
-  "Set the Pipenv virtualenv root var."
-  (npy--set-pipenv-virtualenv-root-var-by-calling))
-
 ;;; Functions to find Pipenv information by exploring directory structures.
 
 (defun npy--set-pipenv-project-vars-by-exploring ()
@@ -503,36 +493,27 @@ Replace it with the inferior process for the project exists, otherwise
 leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
   (if (derived-mode-p 'inferior-python-mode)
       (current-buffer)
-    (npy--set-pipenv-project-vars)
-    (if (stringp npy--pipenv-project-name) ;; i.e. it's not 'no-virtualenv nor nil.
-        (if-let* ((venv-dedicated-buffer-process-name
-                   (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
-                           npy--pipenv-project-name
-                           (f-filename (buffer-file-name))))
-                  (venv-dedicated-process-name (format "*%s[v:%s]*"
-                                                       python-shell-buffer-name
-                                                       npy--pipenv-project-name)))
-            (if-let (venv-dedicated-buffer-running
-                     (comint-check-proc venv-dedicated-buffer-process-name))
-                venv-dedicated-buffer-process-name
-              (if-let (venv-dedicated-running
-                       (comint-check-proc venv-dedicated-process-name))
-                  venv-dedicated-process-name
-                (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
-                  res))))
-      (let ((res (apply orig-fun orig-args)))
-        res))))
+    (let ((prj-name (gpc-get 'pipenv-project-name npy-env)))
+      (if (stringp prj-name) ;; i.e. it's not 'no-virtualenv nor nil.
+          (if-let* ((venv-dedicated-buffer-process-name
+                     (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
+                             prj-name
+                             (f-filename (buffer-file-name))))
+                    (venv-dedicated-process-name (format "*%s[v:%s]*"
+                                                         python-shell-buffer-name
+                                                         prj-name)))
+              (if-let (venv-dedicated-buffer-running
+                       (comint-check-proc venv-dedicated-buffer-process-name))
+                  venv-dedicated-buffer-process-name
+                (if-let (venv-dedicated-running
+                         (comint-check-proc venv-dedicated-process-name))
+                    venv-dedicated-process-name
+                  (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
+                    res))))
+        (let ((res (apply orig-fun orig-args)))
+          res)))))
 
 ;;; Functions to manage the modeline.
-
-(defun npy-default-mode-line- ()
-  "Report the Pipenv project name associated with the buffer in the modeline."
-  (npy--set-pipenv-project-vars)
-  (format "%s[v:%s]"
-          npy-mode-line-prefix
-          (cond ((stringp npy--pipenv-project-root) npy--pipenv-project-name)
-                ((eq npy--pipenv-project-root 'no-virtualenv) npy-no-virtualenv-mark)
-                (t "ERR"))))
 
 (defun npy-default-mode-line ()
   "Report the Pipenv project name associated with the buffer in the modeline."
@@ -555,7 +536,7 @@ The two variables are: `npy--pipenv-project-root' and
 `npy--pipenv-project-name'"
   (let ((res (apply orig-fun orig-args)))
     (when (bound-and-true-p npy-mode)
-      (npy--force-wait (npy--find-pipenv-project-root-by-calling))
+      (gpc-fetch-all npy-env)
       (npy--update-mode-line))
     res))
 
@@ -571,7 +552,6 @@ This is for the global minor mode version to come."
 
 This is for the global minor mode version to come."
   (when npy-dynamic-mode-line-in-dired-mode
-    (npy--force-wait (npy--find-pipenv-project-root-by-calling))
     (npy--update-mode-line)))
 
 (defun npy-desktop-save-hook-function ()
