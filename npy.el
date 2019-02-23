@@ -489,7 +489,7 @@ virtualenv."
 (defun npy-update-pipenv-project-root ()
   "Update the Pipenv project root directory."
   (interactive)
-  (gpc-fetch 'pipenv-project-root npy-env)
+  (gpc-get 'pipenv-project-root npy-env)
   (npy-display-pipenv-project-root))
 
 (defun npy-display-pipenv-virtualenv-root ()
@@ -532,6 +532,48 @@ virtualenv."
            (gpc-val 'pipenv-virtualenv-root npy-env)
            python-shell-virtualenv-root
            npy--python-shell-virtualenv-root-log))
+
+(defvar npy-scratch-parent nil
+  "The parent of this scratch buffer.")
+(make-variable-buffer-local 'npy-scratch-parent)
+
+(defun npy-scratch (&optional dedicated)
+  "Get a scratch buffer for the current mode.
+
+When prefix DEDICATED is set, make the scrach buffer dedicate to
+the buffer spawning it."
+  (interactive
+   (if current-prefix-arg
+       (list t)
+     (list nil)))
+  (let* ((tmp) (name)
+         (parent (current-buffer))
+         (mode 'python-mode)
+         (prj-name (gpc-val 'pipenv-project-name npy-env))
+         (name (if dedicated
+                   (format "*pyscratch[v:%s;b:%s]*"
+                           prj-name
+                           (f-filename (buffer-file-name)))
+                 (format "*pyscratch[v:%s]*"
+                         prj-name)))
+         (buf (get-buffer name)))
+    (cond ((bufferp buf) (pop-to-buffer buf)) ; Existing scratch buffer
+          (t                                  ; New scratch buffer
+           (let ((contents (when (region-active-p)
+                             (buffer-substring-no-properties
+                              (region-beginning) (region-end)))))
+             (with-current-buffer parent
+               (gpc-fetch-all npy-env))
+             (setq buf (get-buffer-create name))
+             (pop-to-buffer buf)
+             (message "a: %s" npy-env)
+             (funcall mode)
+             (gpc-copy npy-env parent buf)
+             (gpc-lock npy-env)
+             (message "b: %s" npy-env)
+             (when contents (save-excursion (insert contents)))
+             (unless current-prefix-arg
+               (setq npy-scratch-parent parent)))))))
 
 ;;; Defining the minor mode.
 
