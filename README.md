@@ -36,7 +36,7 @@ your Emacs config:
 (npy-initialize)
 ```
 
-The initial keymap prefix "C-c '" is just a suggestion. Feel free to
+The initial keymap prefix <kbd>C-c '</kbd> is just a suggestion. Feel free to
 customize `npy-keymap-prefix` to whatever works best for you.
 
 ### Basic Usage
