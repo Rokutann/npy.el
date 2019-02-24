@@ -1,31 +1,34 @@
+'(:rules
+  "Rules:
+1. A python-mode buffer visiting a file in a Pipenv project has npy-child-dedicatable-to set to itself.
+2. If npy-child-dedicatable-to is set, the buffer can spawn any virtualenv-buffer-dedicated buffers, which inherit the npy-child-dedicatable-to of the parent.
+3. If npy-child-dedicatable-to is set, the buffer can spawn any virtualenv-dedicated buffers, but the npy-child-dedicatable-to of the spawned buffers is set to nil.
+4.  If npy-child-dedicatable-to is nil, the buffer can not spawn any virtualenv-dedicated buffers but spawn any virtualenv-dedicated buffers.
+5. When a virtualenv-buffer-dedicated buffer is spawned on a python-mode buffer, its npy-dedicated-to is set to that pytho-mode buffer.
+6. When a virtualenv-buffer-dedicated buffer is spawned on a virtualenv-buffer-dedicated buffer, its npy-dedicated-to is set to npy-child-dedicatable-to fo the parent.
+7. If the buffer to spawn already exists and alive, pop-to-buffer it.
+8. If the buffer to spawn already exists but killed, raise an error.
+9. If the buffer npy-child-dedicatable-to points is already killed when spawning a virtualenv-buffer-dedicated buffer, raise an error.
+10. The presedence list of a python-mode buffer visiting a file in a Pipenv project is: virtualenv-buffer-dedicated, virtualenv-dedicated, dedicated, global.
+11. The presedence list of a virtualenv-dedicated buffer is: virtualenv-dedicated, dedicated, global.
+12. The presedence list of a virtualenv-buffer-dedicated buffer is: virtualenv-buffer-dedicated, virtualenv-dedicated, dedicated, global.
+13. If the buffer to send a string exists but killed, don't raise an error, just move down the precedence list."
+  )
+
 (defmacro register-symbols (&rest symbols)
   (declare (indent 0))
   `(progn
      ,@(mapcar #'(lambda (symbol) `(setq ,symbol nil)) symbols)))
 
 (register-symbols
-  python-mode-buffer-visiting-a-file-not-in-a-pipenv-project
-  dedicated-inferior-python-buffer
-  global-inferior-python-buffer
-  python-mode-buffer-visiting-a-file-in-a-pipenv-project
-  virtualenv-dedicated-inferior-python-buffer
-  virtualenv-buffer-dedicated-inferior-python-buffer
-  virtualenv-dedicated-python-scratch-buffer
-  virtualenv-buffer-dedicated-python-scratch-buffer)
-
-(setq rules
-      '("A python-mode buffer visiting a file in a Pipenv project has :dedicatable-to set to itself."
-        "If :dedicatable-to is set, the buffer can spawn any virtualenv-buffer dedicated buffers which inherit the :dedicatable-to."
-        "If :dedicatable-to is set, the buffer can spawn any virtualenv-dedicated buffers but the :dedicatable-to of the spawned buffers is set to nil."
-        "If :dedicatable-to is nil, the buffer can spawn any virtualenv-dedicated buffers."
-        "If the buffer to spawn already exists and alive, pop up it."
-        "If the buffer to spawn already exists but killed, raise an error."
-        "If :dedicatable-to is killed when spawning a virtualenv-buffer-dedicated buffer, raise an error."
-        "The presedence list of a python-mode buffer visiting a file in a Pipenv project is: virtualenv-buffer-dedicated, virtualenv-dedicated, dedicated, global."
-        "The presedence list of a virtualenv-dedicated buffer is: virtualenv-dedicated, dedicated, global."
-        "The presedence list of a virtualenv-buffer-dedicated buffer is: virtualenv-buffer-dedicated, virtualenv-dedicated, dedicated, global."
-        "If the buffer to send a string exists but killed, move down the precedence list."
-        ))
+ python-mode-buffer-visiting-a-file-not-in-a-pipenv-project
+ dedicated-inferior-python-buffer
+ global-inferior-python-buffer
+ python-mode-buffer-visiting-a-file-in-a-pipenv-project
+ virtualenv-dedicated-inferior-python-buffer
+ virtualenv-buffer-dedicated-inferior-python-buffer
+ virtualenv-dedicated-python-scratch-buffer
+ virtualenv-buffer-dedicated-python-scratch-buffer)
 
 (setq state-machine
       '((:state E1 (python-mode-buffer-visiting-a-file-not-in-a-pipenv-project

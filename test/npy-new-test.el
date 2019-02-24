@@ -180,13 +180,13 @@
           (npy-helper-kill-python-inferior-buffers inf-buf)
           (kill-buffer scratch-buf))))))
 
-(ert-deftest npy-integration-test/spawn-a-scratch-and-try-spawn-a-dedicated-inf-buf-on-it ()
+(ert-deftest npy-integration-test/spawn-a-virtualenv-buffer-dedicated-scratch-and-spawn-a-dedicated-inf-buf-on-it ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
     (with-file-buffers ("project1/buz.py")
       (set-buffer "buz.py")
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-      (npy-scratch)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
+      (npy-scratch t)
+      (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
         (with-current-buffer scratch-buf
           (npy-run-python t)
           (npy-helper-wait))
