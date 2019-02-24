@@ -301,27 +301,6 @@ The value should be 'exploring (default), or 'calling."
   "Return the filename of PATH with a Pipenv hash suffix."
   (f-filename (npy-pipenv-compat-virtualenv-name path)))
 
-;; FIXME: Need to check the Pipenv source what value .project contains
-;; when PIPENV_VENV_IN_PROJECT is set.
-(defun npy--get-pipenv-project-root-from-dotproject (venv-path)
-  "Get the Pipenv project root from the `.project' file in VENV-PATH."
-  (when (and (stringp venv-path)
-             (f-directory-p venv-path))
-    (with-temp-buffer
-      (insert-file-contents (concat venv-path "/.project") nil)
-      (buffer-string))))
-
-;; FIXME: Need to check the Pipenv source what value .project contains
-;; when PIPENV_VENV_IN_PROJECT is set.
-(defun npy--set-pipenv-project-vars-from-dotproject (venv-path)
-  "Set the Pipenv project root and names from the `.project' file in VENV-PATH."
-  (if-let* ((root (npy--get-pipenv-project-root-from-dotproject venv-path)))
-      (if (and (stringp root)
-               (f-directory-p root))
-          (npy--fill-pipenv-project-names root))
-    (npy--fill-pipenv-project-names 'no-virtualenv)
-    (message "\"%s\" is not a virtualenv root.")))
-
 ;;; Pipenv compatibility functions.
 
 (defun npy-pipenv-compat--sanitize (name)
@@ -427,38 +406,6 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
   (f-exists-p (concat (f-full dirname) "/Pipfile")))
 
 ;;; Functions for the integrations with the inferior python mode.
-
-(defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
-  "Tweak the buffer entity in ORIG-ARGS.
-
-Replace it with the inferior process for the project exists, otherwise
-leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
-  (let ((prj-name (gpc-get 'pipenv-project-name npy-env))
-        (file-path (cond (npy-scratch-dedicated
-                          (buffer-file-name npy-scratch-parent))
-                         (npy-scratch-buffer nil)
-                         (t (buffer-file-name)))))
-    (cond ((derived-mode-p 'inferior-python-mode) (current-buffer))
-          ((not (stringp prj-name))
-           (let ((res (apply orig-fun orig-args)))
-             res))
-          (t (let* ((venv-dedicated-buffer-process-name)
-                    (venv-dedicated-process-name
-                     (format "*%s[v:%s]*" python-shell-buffer-name prj-name))
-                    (venv-dedicated-buffer-running)
-                    (venv-dedicated-running
-                     (comint-check-proc venv-dedicated-process-name)))
-               (when file-path
-                 (setq venv-dedicated-buffer-process-name
-                       (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
-                               prj-name
-                               (f-filename file-path)))
-                 (setq venv-dedicated-buffer-running
-                       (comint-check-proc venv-dedicated-buffer-process-name)))
-               (cond (venv-dedicated-buffer-running venv-dedicated-buffer-process-name)
-                     (venv-dedicated-running venv-dedicated-process-name)
-                     (t (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
-                          res))))))))
 
 (defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
   "Tweak the buffer entity in ORIG-ARGS.
@@ -581,7 +528,7 @@ virtualenv."
   (gpc-fetch-all npy-env)
   (let ((project-name (gpc-val 'pipenv-project-name npy-env)))
     (unless (stringp project-name)
-      (error "You are not in a buffer associated with a Pipenv project: project-name is \"%s\"" ))
+      (error "You are not in a buffer associated with a Pipenv project: project-name is \"%s\"" project-name))
     (let* ((parent (current-buffer))
            (maybe-dedicate-to (cond ((and (null npy-scratch-buffer)
                                           (derived-mode-p 'python-mode))
@@ -685,8 +632,7 @@ the buffer spawning it."
       (error "You are not in a buffer associated with a Pipenv project: project-name is \"%s\"" project-name))
     (when (and dedicated (not npy-child-dedicatable-to))
       (error "You are not in a buffer associated with a file you can dedicate to"))
-    (let* ((tmp) (name)
-           (parent (cond ((and (derived-mode-p 'inferior-python-mode)
+    (let* ((parent (cond ((and (derived-mode-p 'inferior-python-mode)
                                npy-dedicated-to
                                dedicated)
                           npy-dedicated-to)

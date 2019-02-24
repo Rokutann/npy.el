@@ -127,25 +127,6 @@
           (npy-helper-kill-python-inferior-buffers inf-buf)
           (kill-buffer scratch-buf))))))
 
-(ert-deftest npy-integration-test/spawn-an-inf-buf-and-try-spawn-a-dedicated-scratch-on-it-but-get-normal/send-string ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project1/buz.py")
-      (set-buffer "buz.py")
-      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-      (npy-run-python)
-      (npy-helper-wait)
-      (let ((inf-buf (get-buffer "*Python[v:project1]*")))
-        (set-buffer inf-buf)
-        (npy-scratch t)
-        (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
-          (npy-helper-write "VAR5 = \"from scratch\"\n" scratch-buf)
-          (with-current-buffer scratch-buf
-            (python-shell-send-buffer))
-          (should-response-match inf-buf
-            "print(VAR5)\n" "from scratch")
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
-
 (ert-deftest npy-integration-test/spawn-a-dedicated-inf-buf-and-spawn-a-scratch-on-it ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
     (with-file-buffers ("project1/buz.py")
@@ -198,6 +179,26 @@
             "print(VAR7)\n" "from scratch")
           (npy-helper-kill-python-inferior-buffers inf-buf)
           (kill-buffer scratch-buf))))))
+
+(ert-deftest npy-integration-test/spawn-an-virtualenv-buffer-dedicated-inf-buf-and-spawn-a-virtualenv-buffer-dedicated-scratch-on-it-but-get-normal ()
+  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+    (with-file-buffers ("project1/buz.py")
+      (set-buffer "buz.py")
+      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+      (npy-run-python t)
+      (npy-helper-wait)
+      (let ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+        (set-buffer inf-buf)
+        (npy-scratch t)
+        (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
+          (npy-helper-write "VAR5 = \"from scratch\"\n" scratch-buf)
+          (with-current-buffer scratch-buf
+            (python-shell-send-buffer))
+          (should-response-match inf-buf
+            "print(VAR5)\n" "from scratch")
+          (npy-helper-kill-python-inferior-buffers inf-buf)
+          (kill-buffer scratch-buf))))))
+
 
 (provide 'npy-new-test)
 ;;; npy-new-test.el ends here
