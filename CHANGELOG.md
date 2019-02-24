@@ -2,15 +2,14 @@
 
 ## 0.1.5.d (wip)
 
-* Rewriting with `gpc.el`.
-
 ### New features
 
-* Added a scratch buffer facility for Pipenv virtualenvs. You can spawn a scratch buffer bound to a Pipenv virtualenv by calling `npy-scratch`.
+* Added a python scratch buffer facility with access to Pipenv virtualenvs. You can spawn a python scratch buffer associated or associatable with a Pipenv virtualenv by calling `npy-scratch`.
 
 ### Changes
 
 * Changed `nalist-initialize` from a function to a macro.
+* Dropped the support for project detection method. Always use `calling` for Pipenv project root detections and `exploring` for Pipenv virtualenv root detections.
 
 ## 0.1.4 (2019-02-22)
 

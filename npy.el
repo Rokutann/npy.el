@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 
-;; This is a simple minor mode which provides python-mode with extra
+;; This is a simple minor mode which provides `python-mode' with extra
 ;; features such as better virtualenv supports.
 
 ;; The goal of v0.1 is to support Pipenv virtualenvs.  The minor mode
@@ -37,12 +37,13 @@
 ;; with (Pipenv) virtual environments as is.
 
 ;; The `npy-mode' extends `python-mode', introducing
-;; virtulaenv-dedicated inferior Python processes.  You can, for
-;; example, send a function definition by `python-shell-send-defun' to
-;; a single virtualenv-dedicated inferior Python process from multiple
-;; Python files under a same virtual environment, even when you have
-;; spawned multiple inferior Python processes for different virtual
-;; environments simultaneously.
+;; virtualenv-dedicated and virtualenv-buffer-dedicated inferior
+;; Python processes.  You can, for example, send a function definition
+;; by `python-shell-send-defun' to a single virtualenv-dedicated
+;; inferior Python process from multiple `python-mode' buffers which
+;; are visiting Python files under the same Pipenv project, even when
+;; you have spawned multiple inferior Python processes for different
+;; virtual environments simultaneously.
 
 ;; The main entry points are `npy-run-python', which spawns new
 ;; inferior python process with access to the virtualenv associated
@@ -52,7 +53,7 @@
 ;; buffers spawned by `npy-run-python'.
 
 ;; The virtualenv-dedicated and virtualenv-buffer-dedicated buffers
-;; follows the rules below internally.
+;; follows the rules below.
 
 ;; Rules:
 
@@ -65,37 +66,37 @@
 
 ;; 3. If npy-child-dedicatable-to is set, the buffer can spawn any
 ;; virtualenv-dedicated buffers, but the npy-child-dedicatable-to of
-;; the spawned buffers is set to nil.
+;; the spawned buffers will be set to nil in spawned buffers.
 
-;; 4.  If npy-child-dedicatable-to is nil, the buffer can not spawn
-;; any virtualenv-dedicated buffers but spawn any virtualenv-dedicated
+;; 4. If npy-child-dedicatable-to is nil, the buffer can not spawn any
+;; virtualenv-dedicated buffers but can spawn any virtualenv-dedicated
 ;; buffers.
 
-;; 5. When a virtualenv-buffer-dedicated buffer is spawned on a
-;; python-mode buffer, its npy-dedicated-to is set to that pytho-mode
-;; buffer.
+;; 5. When a virtualenv-buffer-dedicated buffer is spawned from a
+;; python-mode buffer, its npy-dedicated-to is set to that of
+;; python-mode buffer.
 
-;; 6. When a virtualenv-buffer-dedicated buffer is spawned on a
+;; 6. When a virtualenv-buffer-dedicated buffer is spawned from a
 ;; virtualenv-buffer-dedicated buffer, its npy-dedicated-to is set to
-;; npy-child-dedicatable-to of the parent.
+;; npy-child-dedicatable-to of the parent buffer.
 
-;; 7. If the buffer to spawn already exists and alive, pop-to-buffer
-;; it.
+;; 7. If the buffer to be spawned already exists and alive,
+;; pop-to-buffer it.
 
-;; 8. If the buffer to spawn already exists but killed, raise an
+;; 8. If the buffer to be spawned already exists but killed, raise an
 ;; error.
 
 ;; 9. If the buffer npy-child-dedicatable-to points is already killed
 ;; when spawning a virtualenv-buffer-dedicated buffer, raise an error.
 
-;; 10. The presedence list of a python-mode buffer visiting a file in
+;; 10. The precedence list of a python-mode buffer visiting a file in
 ;; a Pipenv project is: virtualenv-buffer-dedicated,
 ;; virtualenv-dedicated, dedicated, global.
 
-;; 11. The presedence list of a virtualenv-dedicated buffer is:
+;; 11. The precedence list of a virtualenv-dedicated buffer is:
 ;; virtualenv-dedicated, dedicated, global.
 
-;; 12. The presedence list of a virtualenv-buffer-dedicated buffer is:
+;; 12. The precedence list of a virtualenv-buffer-dedicated buffer is:
 ;; virtualenv-buffer-dedicated, virtualenv-dedicated, dedicated,
 ;; global.
 
@@ -274,7 +275,7 @@ The value should be 'exploring (default), or 'calling."
 (gpc-make-variable-buffer-local npy-env)
 
 (defvar npy-child-dedicatable-to nil
-  "The buffer which a virtualenv-buffer-dedicated buffer to be spawned should be dedicated to.")
+  "The buffer which a virtualenv-buffer-dedicated buffer to be spawned should dedicate to.")
 (make-variable-buffer-local 'npy-child-dedicatable-to)
 
 (defvar npy-scratch-buffer nil
@@ -514,11 +515,10 @@ This is for the global minor mode version to come."
      (add-hook 'python-mode-hook 'npy-mode)))
 
 (defun npy-run-python (&optional dedicated)
-  "Run an inferior python process for a virtualenv.
+  "Run an inferior python process with access to a virtualenv.
 
-When called interactively with `prefix-arg', it spawns a
-buffer-dedicated inferior python process with the access to the
-virtualenv."
+When called interactively with `prefix-arg', it spawns a buffer
+DEDICATED inferior python process with access to the virtualenv."
   (interactive
    (if current-prefix-arg
        (list t)
@@ -619,9 +619,9 @@ virtualenv."
     (comint-clear-buffer)))
 
 (defun npy-scratch (&optional dedicated)
-  "Get a scratch buffer for the current mode.
+  "Get a python scratch buffer associated with a virtualenv.
 
-When prefix DEDICATED is set, make the scrach buffer dedicate to
+When prefix DEDICATED is set, make the scratch buffer dedicate to
 the buffer spawning it."
   (interactive
    (if current-prefix-arg
