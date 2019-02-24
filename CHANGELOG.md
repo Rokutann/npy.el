@@ -4,7 +4,7 @@
 
 ### New features
 
-* Added a python scratch buffer facility with access to Pipenv virtualenvs. You can spawn a python scratch buffer associated or associatable with a Pipenv virtualenv by calling `npy-scratch`.
+* Added a scratch buffer facility for `python-mode` with access to Pipenv virtualenvs. By calling `npy-scratch`, you can spawn a python scratch buffer associated or associatable with a Pipenv virtualenv.
 
 ### Changes
 

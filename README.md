@@ -3,14 +3,15 @@
 
 ## Synopsis
 
-**npy.el** is a set of nano (or minimalistic) extensions to the Python development 
-support in Emacs. Its first goal is to provide a nice integration
-of Pipenv virtual environment and Emacs inferior python mode.  For
-instance - spawning multiple inferior python processes for multiple
-Pipenv projects, and dispatching Python code chunks sent from a
-buffer, which is visiting a Python file in one of such Pipenv
-projects, to the inferior python process bound to the virtual environment of the same Pipenv
-project. We call this new type of inferior processes **virtualenv-dedicated inferior python processes**.
+**npy.el** is a set of nano (or minimalistic) extensions to the Python
+development support in Emacs. Its first goal is to provide a nice
+integration of Pipenv virtual environments and Emacs inferior python
+modes.  For instance - spawning multiple inferior python processes for
+multiple Pipenv projects, and dispatching Python code chunks sent from
+a buffer, which is visiting a Python file in one of the Pipenv
+projects, to the inferior python process bound to the virtual
+environment of the same Pipenv project. We call this new type of
+inferior processes **virtualenv-dedicated inferior python processes**.
 
 Some of npy.el's features:
 
@@ -27,7 +28,9 @@ Some of npy.el's features:
   you write out the content of the buffer as a file under other Pipenv project
 * spawn a python scratch buffer associated or associatable with a
   virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
-  process.
+  process. We call this type of scratch buffers
+  **virtualenv-dedicated** or **virtualenv-buffer-dedicated python
+  scratch buffers**.
 * spawn a Pipenv shell for a Pipenv project
 
 ## Installation
@@ -54,8 +57,9 @@ free to customize `npy-keymap-prefix` to whatever works best for you.
 `npy-mode` is automatically enabled when you open a Python file, i.e.
 it's hooked to the `python-mode`.
 
-The mode line shows the Pipenv project the file the buffer is visiting
-belongs to.  The association usually happens when you open a file. The
+When `npy-mode` is turned on, the mode line shows the Pipenv project
+the file the buffer is visiting belongs to.  The lookup for a Pipenv
+project in the system usually happens when you visit the file. The
 mode line looks like **Py[v:hello_world]** where 'hello_world' is the
 name of the Pipenv project.
 
@@ -63,17 +67,18 @@ Spawn an virtualenv-dedicated inferior python process by <kbd>C-c '
 p</kbd> or <kbd>M-x</kbd> <kbd>npy-run-python</kbd>. Its buffer name
 should be **\*Python[v:hello_world]\***.
 
-After that npy-mode works transparently: you can use all the
-interaction between the source file(s) and the inferior python mode as
-in `python-mode`.
+Hereafter `npy-mode` works transparently: you can use all the
+interaction between buffers visiting Python files and the inferior
+python mode as in an ordinary `python-mode` buffer.
 
 Additionally, you can spawn a buffer-dedicated inferior python mode
 with access to the virtual environment by putting any prefix args to
 <kbd>M-x</kbd> <kbd>npy-run-python</kbd> or <kbd>C-u C-c 'p</kbd>. The
 mode lines look like **Py[v:hello_world;b:hello.py]** and
-**\*Python[v:hello_world;b:hello.py]\***.  The inferior python process
-only belongs to the buffer. Other buffers from the same Pipenv project
-can't send code chunks to the process.
+**\*Python[v:hello_world;b:hello.py]\*** respectively.  This type of
+inferior python processes only associated with the `python-mode`
+buffer where it spawned. Other buffers visiting files in the same
+Pipenv project can't send code chunks to the process.
 
 Note: The `python-mode` defines two types of inferior python
 processes: global and (buffer-)dedicated. Their precedence order is:
@@ -82,8 +87,8 @@ processes: global and (buffer-)dedicated. Their precedence order is:
 buffer-dedicated > global
 ```
 
-The precedence order in npy.el which introduces two additional two
-types: virtualenv-dedicated and virtualenv-buffer-dedicated is:
+The precedence order in npy.el, which introduces two additional two
+types: virtualenv-dedicated and virtualenv-buffer-dedicated, is:
 
 ```
 virtualenv-buffer-dedicated > virtualenv-dedicated > buffer-dedicated > global
@@ -93,8 +98,7 @@ We might change this in a future release.
 
 You can spawn a scratch buffer for `python-mode` with access to a
 virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
-process. We call this type of scratch buffers **virtualenv-dedicated**
-or **virtualenv-buffer-dedicated python scratch buffers**.
+process by <kbd>M-x</kbd> <kbd>npy-scratch</kbd>.
 
 Spawn a Pipenv shell by <kbd>C-c ' s</kbd> or <kbd>M-x</kbd>
 <kbd>npy-shell</kbd>.
@@ -102,7 +106,7 @@ Spawn a Pipenv shell by <kbd>C-c ' s</kbd> or <kbd>M-x</kbd>
 ## Caveats
 
 * It slows down your Emacs startup process when you restore lots of
-  Python files with desktop-mode.
+  Python files with `desktop-mode`.
 
 ## Known issues
 
