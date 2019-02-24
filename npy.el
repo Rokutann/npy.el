@@ -56,6 +56,24 @@
 ;;     (npy-initialize)
 ;;
 
+;; Buffer-command rules:
+
+;; 1. In a python-mode buffer visiting a file in a Pipenv project:
+;; 1.1 (npy-run-python) spanws a virtualenv-dedicated inf py buf.
+;; 1.1.1 If there is already such a buffer, return the buffer.
+;; 1.2 (npy-scratch) spawns a virtualenv-bound py scratch buf.
+;; 1.2.1 If there is already such a buffer, return the buffer.
+;; 1.3 (python-shell-send-string) sends a string to an inferior buffer which is:
+;; 1.3.1 virtualenv-dedicated -> dedicated -> global.
+
+;; 1. In a python-mode buffer visiting a file not in a Pipenv project:
+;; 1.1 (npy-run-python) spanws a virtualenv-dedicated inf py buf.
+;; 1.1.1 If there is already such a buffer, return the buffer.
+;; 1.2 (npy-scratch) spawns a virtualenv-bound py scratch buf.
+;; 1.2.1 If there is already such a buffer, return the buffer.
+;; 1.3 (python-shell-send-string) sends a string to an inferior buffer which is:
+;; 1.3.1 virtualenv-dedicated -> dedicated -> global.
+
 ;;;
 ;;; Code:
 ;;;
@@ -657,13 +675,21 @@ the buffer spawning it."
                    "pipenv-project-name-with-hash: %s\n"
                    "pipenv-virtualenv-root: %s\n"
                    "python-shell-virtualenv-root: %s\n"
-                   "python-shell-virtualenv-root-log: %s")
+                   "npy-scratch-buffer: %s\n"
+                   "npy-scratch-parent: %s\n"
+                   "npy-scratch-dedicated: %s\n"
+                   "npy-shell-initialized: %s\n"
+                   "npy-shell-dedicated-to: %s\n")
            (gpc-val 'pipenv-project-root npy-env)
            (gpc-val 'pipenv-project-name npy-env)
            (gpc-val 'pipenv-project-name-with-hash npy-env)
            (gpc-val 'pipenv-virtualenv-root npy-env)
            python-shell-virtualenv-root
-           npy--python-shell-virtualenv-root-log))
+           npy-scratch-buffer
+           npy-scratch-parent
+           npy-scratch-dedicated
+           npy-shell-initialized
+           npy-shell-dedicated-to))
 
 ;;; Defining the minor mode.
 
