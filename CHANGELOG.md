@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.5.d (wip)
+## 0.1.5 (2019-02-25)
 
 ### New features
 

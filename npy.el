@@ -5,7 +5,7 @@
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
 ;; Keywords: tools, processes
 ;; URL: https://github.com/mukuge/npy-mode.el/
-;; Package-Version: 0.1.5.d
+;; Package-Version: 0.1.5
 ;; Package-Requires: ((emacs "26.1")(f "0.20.0")(s "1.7.0"))
 
 ;; This file is not part of GNU Emacs.
