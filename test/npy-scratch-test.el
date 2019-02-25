@@ -24,6 +24,22 @@
 
 ;;; Code:
 
+(defmacro let-to-kill (buffer-bindings &rest body)
+  "Ensure kill BUFFER-BINDINGS after executing BODY."
+  (declare (indent 1))
+  `(let ,buffer-bindings
+     (unwind-protect
+         ,@body
+       ,@(mapcar '(lambda (binding) `(npy-helper-kill-python-buffer ,(car binding))) buffer-bindings))))
+
+(defun npy-helper-kill-python-buffer (buffer)
+  "Kill a `python-mode' or `inferior-python-mode' BUFFER."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (if (derived-mode-p 'inferior-python-mode)
+          (npy-helper-kill-python-inferior-buffers buffer)
+        (kill-buffer)))))
+
 (defun npy-helper-write (string buffer)
   "Write STRING out to BUFFER."
   (mapc #'(lambda (char) (write-char char buffer)) string))
@@ -34,9 +50,8 @@
       (set-buffer "buz.py")
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-scratch)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
-        (should-not (eq  scratch-buf nil))
-        (kill-buffer scratch-buf)))))
+      (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
+        (should-not (eq  scratch-buf nil))))))
 
 (ert-deftest npy-integration-test/spawn-an-npy-scratch-dedicated/check-buffer-name ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -44,9 +59,8 @@
       (set-buffer "buz.py")
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-scratch t)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
-        (should-not (eq  scratch-buf nil))
-        (kill-buffer scratch-buf)))))
+      (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
+        (should-not (eq  scratch-buf nil))))))
 
 (ert-deftest npy-integration-test/npy-scratch/send-string ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -56,15 +70,13 @@
       (npy-scratch)
       (npy-run-python)
       (npy-helper-wait)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*"))
-            (inf-buf (get-buffer "*Python[v:project1]*")))
+      (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1]*"))
+                    (inf-buf (get-buffer "*Python[v:project1]*")))
         (npy-helper-write "VAR1 = \"from scratch\"\n" scratch-buf)
         (with-current-buffer scratch-buf
           (python-shell-send-buffer))
         (should-response-match inf-buf
-          "print(VAR1)\n" "from scratch")
-        (npy-helper-kill-python-inferior-buffers inf-buf)
-        (kill-buffer scratch-buf)))))
+          "print(VAR1)\n" "from scratch")))))
 
 (ert-deftest npy-integration-test/npy-scratch-dedicated/send-string ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -75,17 +87,15 @@
       (npy-helper-wait)
       (set-buffer "buz.py")
       (npy-scratch t)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*"))
-            (inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+      (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*"))
+                    (inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
         (should-not (null scratch-buf))
         (should-not (null inf-buf))
         (npy-helper-write "VAR2 = \"from scratch\"\n" scratch-buf)
         (with-current-buffer scratch-buf
           (python-shell-send-buffer))
         (should-response-match inf-buf
-          "print(VAR2)\n" "from scratch")
-        (npy-helper-kill-python-inferior-buffers inf-buf)
-        (kill-buffer scratch-buf)))))
+          "print(VAR2)\n" "from scratch")))))
 
 (ert-deftest npy-integration-test/npy-scratch-dedicated-spawned-from-an-inf-buf-dedicated/send-string ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -94,17 +104,15 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python t)
       (npy-helper-wait)
-      (let ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+      (let-to-kill ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
         (set-buffer inf-buf)
         (npy-scratch t)
-        (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
+        (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
           (npy-helper-write "VAR3 = \"from scratch\"\n" scratch-buf)
           (with-current-buffer scratch-buf
             (python-shell-send-buffer))
           (should-response-match inf-buf
-            "print(VAR3)\n" "from scratch")
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
+            "print(VAR3)\n" "from scratch"))))))
 
 (ert-deftest npy-integration-test/spawn-an-inf-buf-and-spawn-a-scratch-on-it/send-string ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -113,19 +121,17 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python)
       (npy-helper-wait)
-      (let ((inf-buf (get-buffer "*Python[v:project1]*")))
+      (let-to-kill ((inf-buf (get-buffer "*Python[v:project1]*")))
         (message "inf-buf: %s" inf-buf)
         (set-buffer inf-buf)
         (npy-scratch)
-        (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
+        (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
           (message "scratch-buf: %s" scratch-buf)
           (npy-helper-write "VAR4 = \"from scratch\"\n" scratch-buf)
           (with-current-buffer scratch-buf
             (python-shell-send-buffer))
           (should-response-match inf-buf
-            "print(VAR4)\n" "from scratch")
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
+            "print(VAR4)\n" "from scratch"))))))
 
 (ert-deftest npy-integration-test/spawn-a-dedicated-inf-buf-and-spawn-a-scratch-on-it ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -134,13 +140,11 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python t)
       (npy-helper-wait)
-      (let ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+      (let-to-kill ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
         (set-buffer inf-buf)
         (npy-scratch)
-        (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
-          (should-not (eq scratch-buf nil))
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
+        (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
+          (should-not (eq scratch-buf nil)))))))
 
 (ert-deftest npy-integration-test/spawn-a-scratch-and-spawn-an-inf-buf-on-it ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -148,18 +152,16 @@
       (set-buffer "buz.py")
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-scratch)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
+      (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1]*")))
         (with-current-buffer scratch-buf
           (npy-run-python)
           (npy-helper-wait))
-        (let ((inf-buf (get-buffer "*Python[v:project1]*")))
+        (let-to-kill ((inf-buf (get-buffer "*Python[v:project1]*")))
           (npy-helper-write "VAR6 = \"from scratch\"\n" scratch-buf)
           (with-current-buffer scratch-buf
             (python-shell-send-buffer))
           (should-response-match inf-buf
-            "print(VAR6)\n" "from scratch")
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
+            "print(VAR6)\n" "from scratch"))))))
 
 (ert-deftest npy-integration-test/spawn-a-virtualenv-buffer-dedicated-scratch-and-spawn-a-dedicated-inf-buf-on-it ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -167,18 +169,16 @@
       (set-buffer "buz.py")
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-scratch t)
-      (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
+      (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
         (with-current-buffer scratch-buf
           (npy-run-python t)
           (npy-helper-wait))
-        (let ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+        (let-to-kill ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
           (npy-helper-write "VAR7 = \"from scratch\"\n" scratch-buf)
           (with-current-buffer scratch-buf
             (python-shell-send-buffer))
           (should-response-match inf-buf
-            "print(VAR7)\n" "from scratch")
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
+            "print(VAR7)\n" "from scratch"))))))
 
 (ert-deftest npy-integration-test/spawn-an-virtualenv-buffer-dedicated-inf-buf-and-spawn-a-virtualenv-buffer-dedicated-scratch-on-it-but-get-normal ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -187,17 +187,15 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python t)
       (npy-helper-wait)
-      (let ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+      (let-to-kill ((inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
         (set-buffer inf-buf)
         (npy-scratch t)
-        (let ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
+        (let-to-kill ((scratch-buf (get-buffer "*pyscratch[v:project1;b:buz.py]*")))
           (npy-helper-write "VAR5 = \"from scratch\"\n" scratch-buf)
           (with-current-buffer scratch-buf
             (python-shell-send-buffer))
           (should-response-match inf-buf
-            "print(VAR5)\n" "from scratch")
-          (npy-helper-kill-python-inferior-buffers inf-buf)
-          (kill-buffer scratch-buf))))))
+            "print(VAR5)\n" "from scratch"))))))
 
 
 (provide 'npy-new-test)
