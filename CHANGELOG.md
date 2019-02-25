@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.5.d (wip)
+
+### New features
+
+* Added a scratch buffer facility for `python-mode` with access to Pipenv virtualenvs. By calling `npy-scratch`, you can spawn a python scratch buffer associated or associatable with a Pipenv virtualenv.
+
+### Changes
+
+* Changed `nalist-initialize` from a function to a macro.
+* Dropped the support for project detection method. Always use `calling` for Pipenv project root detections and `exploring` for Pipenv virtualenv root detections.
+
 ## 0.1.4 (2019-02-22)
 
 ### Changes

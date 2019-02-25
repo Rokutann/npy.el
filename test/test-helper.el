@@ -101,6 +101,7 @@ pair is the content for that file."
 (defun npy-helper-match-filter (regex string)
   "Check if outputs of PROC containg STRING."
   ;;  (write-region (format "string:%s\n" string) nil "/tmp/npy.log" t)
+  (message "Python response: %s" string)
   (when (s-matches-p regex string)
     ;;    (write-region (format "%s" string) nil "/tmp/npy.log" t)
     (setq npy-test/match-flag t)))
