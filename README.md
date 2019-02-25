@@ -30,7 +30,7 @@ Some of npy.el's features:
   virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
   process. We call this type of scratch buffers
   **virtualenv-dedicated** or **virtualenv-buffer-dedicated python
-  scratch buffers**.
+  scratch buffers**
 * spawn a Pipenv shell for a Pipenv project
 
 ## Installation
@@ -39,7 +39,7 @@ Ensure you have four elisp packages, `f.el`, `s.el`, `nalist.el`, and
 `gpc.el`, installed in your Emacs prior to the npy.el
 installation. You can get `f` and `s` from `MELPA` or `Github`, and
 [nalist](https://github.com/mukuge/nalist.el) and
-[gpc](https://github.com/mukuge/gpc.el)` from `Github`.
+[gpc](https://github.com/mukuge/gpc.el) from `Github`.
 
 Place `npy.el` on a directory in your `load-path', and add this to
 your Emacs config:
