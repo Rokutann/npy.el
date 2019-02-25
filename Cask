@@ -10,5 +10,5 @@
  (depends-on "el-mock")
  (depends-on "s")
  (depends-on "exec-path-from-shell")
- (depends-on "nalist" :git "https://github.com/mukuge/nalist.el" :branch "dev")
+ (depends-on "nalist" :git "https://github.com/mukuge/nalist.el")
  (depends-on "gpc" :git "https://github.com/mukuge/gpc.el"))
