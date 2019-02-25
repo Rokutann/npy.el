@@ -15,7 +15,7 @@ inferior processes **virtualenv-dedicated inferior python processes**.
 
 Some of npy.el's features:
 
-* spawn a vienrtualenv-dedicated inferior python process for a Pipenv project
+* spawn a virtualenv-dedicated inferior python process for a Pipenv project
 * send a Python code chunk from multiple Python file buffers in a Pipenv project
   to the virtualenv-dedicated inferior python process for the project
 * dispatch Python code chunks to appropriate virtualenv-dedicated inferior
