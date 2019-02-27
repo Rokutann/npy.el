@@ -795,6 +795,7 @@ MORE-SPECS are additional or overriding values passed to
 
 (advice-add 'getenv :around #'npy-advice-getenv)
 
+
 ;;; Defining the minor mode.
 
 (defvar npy-command-map
@@ -831,7 +832,7 @@ virtualenv-buffer-dedicated python scratch buffers."
   :require 'npy
   :lighter npy--mode-line
   :keymap npy-mode-map
-  :global nil
+  :global t
   (cond
    (npy-mode
     ;; These hooks are for when using npy as a global minor mode.
