@@ -32,7 +32,7 @@ Some of npy.el's features:
   back-and-forth between buffers visiting files in different Pipenv
   projects. This is for other pythonic modes such as `pytest.el` and
   `python-pytest.el`
-* Enable `info-lookup-symbol` for the Python official documents. The
+* enable `info-lookup-symbol` for the Python official documents. The
   info files for Python 3.7.2 are included
 * spawn a Pipenv shell for a Pipenv project
 

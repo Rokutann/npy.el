@@ -2,7 +2,7 @@
 
 ## 0.1.6 (wip)
 
-* Adding info-lookup for Python documents.
+* Adding info-lookup-symbol for Python documents.
 * Adding a feature to activate Pipenv virtualenvs dynamically.
 
 
