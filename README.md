@@ -99,8 +99,8 @@ processes: global and (buffer-)dedicated. Their precedence order is:
 buffer-dedicated > global
 ```
 
-The precedence order in npy.el, which introduces two additional two
-types: virtualenv-dedicated and virtualenv-buffer-dedicated, is:
+The precedence order in npy.el, which introduces two additional types:
+virtualenv-dedicated and virtualenv-buffer-dedicated, is:
 
 ```
 virtualenv-buffer-dedicated > virtualenv-dedicated > buffer-dedicated > global
