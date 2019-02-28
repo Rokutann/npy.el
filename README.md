@@ -33,7 +33,7 @@ Some of npy.el's features:
   projects. This is for other pythonic modes such as `pytest.el` and
   `python-pytest.el`
 * Enable `info-lookup-symbol` for the Python official documents. The
-  info files for Python version 3.7.2 are included
+  info files for Python 3.7.2 are included
 * spawn a Pipenv shell for a Pipenv project
 
 ## Installation
