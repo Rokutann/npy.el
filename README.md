@@ -112,28 +112,29 @@ You can spawn a scratch buffer for `python-mode` with access to a
 virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
 process by <kbd>M-x</kbd> <kbd>npy-scratch</kbd>.
 
-### Activate/deactivate Virtualenvs Dynamically
+### Automatically Switch the Activated Virtualenv (EXPERIMENTAL)
 
 Enable the feature by <kbd>M-x</kbd>
 <kbd>npy-activate-virtualenv-automatic</kbd>. Thereafter, the feature
-supplies the appropriate executable search path information to other
+supplies the appropriate virtualenv executable search path to other
 pythonic modes such as `pytest.el` and `python-pytest.el` per buffer
 base.
 
 Disable the feature by <kbd>M-x</kbd>
 <kbd>npy-deactivate-virtualenv-automatic</kbd>.
 
-### Lookup Python Official Documents
+### Lookup Python Official Documents (EXPERIMENTAL)
 
 Install `python372full.info` in your system. 
 
 Lookup the info file by <kbd>M-x</kbd> <kbd>info-lookup-symbol</kbd>
 or <kbd>C-h S</kbd>.
 
-This package contains two info files: `python372full.info` and
-`python372api.info` in the data/info directory. `python372api.info`
-only contains The Python Language Reference, The Python Standard
-Library, and Python/C API Reference Manual.
+This package includes two info files: `python372full.info` and
+`python372api.info` which are found in the data/info/
+directory. `python372api.info` is a subset of `python372full.info` and
+contains The Python Language Reference, The Python Standard Library,
+and Python/C API Reference Manual only.
 
 ### Spawn a Pipenv Shell
 
@@ -143,7 +144,7 @@ Spawn a Pipenv shell by <kbd>C-c ' s</kbd> or <kbd>M-x</kbd>
 ## Caveats
 
 * It slows down your Emacs startup process when you restore lots of
-  Python files with `desktop-mode`.
+  buffers with `desktop-mode`.
 
 ## Known issues
 
