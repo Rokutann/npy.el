@@ -782,6 +782,10 @@ MORE-SPECS are additional or overriding values passed to
   (advice-add 'getenv :around #'npy-advice-getenv)
   ;; (advice-add 'find-file-noselect :around 'npy-advise-find-file-noselect)
   )
+;; `pytest' and `python-pytest' work fine without the advice to
+;; `find-file-noselet'.  So, currently it's disabled.  When we find a
+;; mode which requires this advice to work with virtualenvs, we'll
+;; uncomment this.
 
 (defun npy-deactivate-virtualenv-automatic ()
   "Deactivate virtualenv automatic."
@@ -854,8 +858,6 @@ it's called."
   "Set the name, root, and venv of a Pipenv project."
   (gpc-fetch-all npy-env))
 
-(add-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
-
 ;;; Defining the minor mode.
 
 (defvar npy-command-map
@@ -899,6 +901,7 @@ virtualenv-buffer-dedicated python scratch buffers."
     ;;(add-hook 'find-file-hook 'npy-find-file-hook-function)
     ;;(add-hook 'desktop-save-hook 'npy-desktop-save-hook-function)
     (add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
+    (add-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
     (advice-add 'python-shell-get-buffer :around #'npy-python-shell-get-buffer-advice)
     (advice-add 'write-file :around #'npy-write-file-advice)
     (npy-update-pipenv-project-root)
@@ -908,6 +911,7 @@ virtualenv-buffer-dedicated python scratch buffers."
     ;;(remove-hook 'find-file-hook 'npy-find-file-hook-function)
     ;;(remove-hook 'desktop-save-hook 'npy-desktop-save-hook-function)
     (remove-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
+    (remove-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
     (advice-remove 'python-shell-get-buffer #'npy-python-shell-get-buffer-advice)
     (advice-remove 'write-file #'npy-write-file-advice))))
 
