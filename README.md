@@ -125,7 +125,7 @@ Disable the feature by <kbd>M-x</kbd>
 
 ### Lookup Python Official Documents (EXPERIMENTAL)
 
-Install `python372full.info` in your system. 
+Install `python372full.info` into your system. 
 
 Lookup the info file by <kbd>M-x</kbd> <kbd>info-lookup-symbol</kbd>
 or <kbd>C-h S</kbd>.
