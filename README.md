@@ -143,8 +143,8 @@ Spawn a Pipenv shell by <kbd>C-c ' s</kbd> or <kbd>M-x</kbd>
 
 ## Caveats
 
-* It slows down your Emacs startup process when you restore lots of
-  buffers with `desktop-mode`.
+* It slows down your Emacs startup process when you restore more than
+  several buffers with `desktop-mode`.
 
 ## Known issues
 
