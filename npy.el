@@ -235,43 +235,54 @@ The value should be 'exploring (default), or 'calling."
 
 ;;; Pipenv project and virtualenv core variables and their access functions.
 
+(defun npy-pipenv-project-root-fetcher ()
+  "Fetch the Pipenv project root path if exists."
+  (if (eq npy-pipenv-project-detection 'exploring)
+      (let* ((buffer-filename (buffer-file-name (current-buffer)))
+             (dirname (cond (buffer-filename (f-dirname buffer-filename))
+                            (default-directory default-directory)
+                            (t nil))))
+        (if dirname
+            (let ((root (npy--find-pipenv-project-root-by-exploring dirname)))
+              (if root root 'no-virtualenv))
+          'no-virtualenv))
+    (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
+      (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
+            ((stringp pipenv-res) 'no-virtualenv)
+            (t 'ERR)))))
+
+(defun npy-pipenv-project-name-fetcher ()
+  "Fetch the Pipenv project name if exists."
+  (let ((root (gpc-get 'pipenv-project-root npy-env)))
+    ;; FIXME: Need to implement gpc priority to eusure the
+    ;; syncronization of cache entities when they refer other entities
+    ;; in their fetchers.
+    (cond ((stringp root) (f-filename root))
+          ((eq root 'no-virtualenv) 'no-virtualenv)
+          (t 'ERR))))
+
+(defun npy-pipenv-project-name-with-hash-fetcher ()
+  "Fetch the Pipenv project name with hash if exists."
+  (let ((root (gpc-get 'pipenv-project-root npy-env)))
+    ;; FIXME: Need to implement gpc priority to eusure the
+    ;; syncronization of cache entities when they refer other entities
+    ;; in their fetchers.
+    (cond ((stringp root) (npy--pipenv-get-name-with-hash root))
+          ((eq root 'no-virtualenv) 'no-virtualenv)
+          (t 'ERR))))
+
+(defun npy-pipenv-virtualenv-root-fetcher ()
+  "Fetch the Pipenv virtualenv root path if exists."
+  (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
+    (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
+          ((stringp pipenv-res) 'no-virtualenv)
+          (t 'ERR))))
+
 (gpc-init npy-env
-  '((pipenv-project-root
-     nil
-     (lambda ()
-       (if (eq npy-pipenv-project-detection 'exploring)
-           ;; FIXME: By this if-let, process buffers and dired buffers are classified as 'no-virtualenv
-           ;; It's not harmful practically for now, but it's not nice.
-           (if-let* ((filename (buffer-file-name (current-buffer)))
-                     (dirname (f-dirname filename))
-                     (root (npy--find-pipenv-project-root-by-exploring dirname)))
-               root
-             'no-virtualenv)
-         (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
-           (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
-                 ((stringp pipenv-res) 'no-virtualenv)
-                 (t 'ERR))))))
-    (pipenv-project-name
-     nil
-     (lambda ()
-       (let ((root (gpc-fetch 'pipenv-project-root npy-env)))
-         (cond ((stringp root) (f-filename root))
-               ((eq root 'no-virtualenv) 'no-virtualenv)
-               (t 'ERR)))))
-    (pipenv-project-name-with-hash
-     nil
-     (lambda ()
-       (let ((root (gpc-fetch 'pipenv-project-root npy-env)))
-         (cond ((stringp root) (npy--pipenv-get-name-with-hash root))
-               ((eq root 'no-virtualenv) 'no-virtualenv)
-               (t 'ERR)))))
-    (pipenv-virtualenv-root
-     nil
-     (lambda ()
-       (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
-         (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
-               ((stringp pipenv-res) 'no-virtualenv)
-               (t 'ERR)))))))
+  '((pipenv-project-root nil npy-pipenv-project-root-fetcher)
+    (pipenv-project-name nil npy-pipenv-project-name-fetcher)
+    (pipenv-project-name-with-hash nil npy-pipenv-project-name-with-hash-fetcher)
+    (pipenv-virtualenv-root nil npy-pipenv-virtualenv-root-fetcher)))
 (gpc-make-variable-buffer-local npy-env)
 
 (defvar npy-child-dedicatable-to nil
@@ -466,13 +477,6 @@ The two variables are: `npy--pipenv-project-root' and
 
 This is for the global minor mode version to come."
   (when npy-dynamic-mode-line
-    (npy--update-mode-line)))
-
-(defun npy-dired-mode-hook-function ()
-  "Get the name and root of a Pipenv project, and update the mode line.
-
-This is for the global minor mode version to come."
-  (when npy-dynamic-mode-line-in-dired-mode
     (npy--update-mode-line)))
 
 (defun npy-desktop-save-hook-function ()
@@ -769,32 +773,88 @@ MORE-SPECS are additional or overriding values passed to
 
 (advice-add 'info-insert-file-contents :after #'npy-auto-hide-info-note-references)
 
-;; Tweak minor mode map for `anaconda-mode'.
-(with-eval-after-load 'anaconda-mode
-  (define-key anaconda-mode-map (kbd "M-?") nil))
+;;; Virtualenv activate automatic functions.
 
-(with-eval-after-load 'help
-  (define-key help-map "p" 'anaconda-mode-show-doc))
+(defun npy-activate-virtualenv-automatic ()
+  "Activate and change virtualenvs automatically following buffer positions in the system."
+  (interactive)
+  (advice-add 'make-process :around #'npy-advise-process-creation)
+  (advice-add 'getenv :around #'npy-advice-getenv)
+  ;; (advice-add 'find-file-noselect :around 'npy-advise-find-file-noselect)
+  )
 
-(with-eval-after-load 'info
-  (setq Info-hide-note-references t))
+(defun npy-deactivate-virtualenv-automatic ()
+  "Deactivate virtualenv automatic."
+  (interactive)
+  (advice-remove 'make-process  #'npy-advise-process-creation)
+  (advice-remove 'getenv #'npy-advice-getenv)
+  ;; (advice-remove 'find-file-noselect 'npy-advise-find-file-noselect)
+  )
 
-;;; Give advice to getenv. (EXPERIMENTAL)
+(defun npy-advise-find-file-noselect (orig-fun &rest orig-args)
+  "Advise `find-file-noselet' :around with ORIG-FUN and ORIG-ARGS."
+  (npy--debug "npy-advise-find-file-noselect called: %s" orig-args)
+  (let ((res (apply orig-fun orig-args)))
+    (npy--debug "its response: %s" res)
+    (npy--debug "its buffer-file-name: %s" (buffer-file-name res))
+    (when (and res (buffer-file-name res))
+      (with-current-buffer res
+        (gpc-get 'pipenv-project-name npy-env)
+        (gpc-get 'pipenv-project-name-with-hash npy-env)))
+    res))
+
+(defun npy-advise-process-creation (orig-fun &rest orig-args)
+  "Tweak `exec-path' and PATH during a `make-process' call.
+
+ORIG-FUN should be `make-process', and ORIG-ARGS is the arguments
+when it's called."
+  (npy--debug "npy-advise-process-creation called in %s" (current-buffer))
+  (let* ((project-name (gpc-get 'pipenv-project-name npy-env)))
+    (npy--debug "project-name: %s" project-name)
+    (if (stringp project-name)
+        (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
+               (venv-bin-path (concat venv-root "/bin/"))
+               ;; (exec-path (cons venv-bin-path exec-path)) ; `make-process' doesn't need this.
+               (orig-path (getenv "PATH")))
+          (setenv "PATH" (concat venv-bin-path ":" orig-path))
+          (npy--debug "temporary path: %s" (getenv "PATH"))
+          (unwind-protect
+              (let* ((res (apply orig-fun orig-args))
+                     (paths (s-split ":" (getenv "PATH")))
+                     (new-paths (cl-remove venv-bin-path paths :test 'equal)))
+                (npy--debug "new paths: %s" new-paths)
+                (setenv "PATH" (s-join ":" new-paths))
+                res)
+            (setenv "PATH" orig-path)))
+      (let ((res (apply orig-fun orig-args)))
+        res))))
 
 (defun npy-advice-getenv (orig-fun &rest orig-args)
-  "Append a virtualenv path when possible."
+  "Append the virtualenv path when possible.
+
+ORIG-FUN should be `getenv' and ORIG-ARGS is the arguments when
+it's called."
   (let ((res (apply orig-fun orig-args)))
     (when (equal (car orig-args) "PATH")
       (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
              (venv-bin-path (when (stringp venv-root)
                               (concat venv-root "/bin/"))))
-        (npy--debug "getenv: args=%s venv-root %s" orig-args venv-root)
+        (npy--debug "npy-advice-getenv called: args=%s venv-root %s" orig-args venv-root)
         (when venv-bin-path
-          (setq res (concat venv-bin-path ":" res)))))
+          (let* ((path-list (s-split ":" res))
+                 (clean-paths (s-join ":" (cl-remove venv-bin-path path-list :test 'equal))))
+            (setq res (concat venv-bin-path ":" clean-paths))))))
     res))
 
-(advice-add 'getenv :around #'npy-advice-getenv)
+(defun npy-dired-mode-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (gpc-fetch-all npy-env))
 
+(defun npy-compilation-mode-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (gpc-fetch-all npy-env))
+
+(add-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
 
 ;;; Defining the minor mode.
 
@@ -832,13 +892,13 @@ virtualenv-buffer-dedicated python scratch buffers."
   :require 'npy
   :lighter npy--mode-line
   :keymap npy-mode-map
-  :global t
+  :global nil
   (cond
    (npy-mode
     ;; These hooks are for when using npy as a global minor mode.
     ;;(add-hook 'find-file-hook 'npy-find-file-hook-function)
-    ;;(add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     ;;(add-hook 'desktop-save-hook 'npy-desktop-save-hook-function)
+    (add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     (advice-add 'python-shell-get-buffer :around #'npy-python-shell-get-buffer-advice)
     (advice-add 'write-file :around #'npy-write-file-advice)
     (npy-update-pipenv-project-root)
@@ -846,8 +906,8 @@ virtualenv-buffer-dedicated python scratch buffers."
       (setq npy-child-dedicatable-to (current-buffer))))
    (t
     ;;(remove-hook 'find-file-hook 'npy-find-file-hook-function)
-    ;;(remove-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     ;;(remove-hook 'desktop-save-hook 'npy-desktop-save-hook-function)
+    (remove-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     (advice-remove 'python-shell-get-buffer #'npy-python-shell-get-buffer-advice)
     (advice-remove 'write-file #'npy-write-file-advice))))
 
