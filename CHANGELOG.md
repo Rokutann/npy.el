@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6 (wip)
+
+* Adding info-lookup for Python documents.
+* Adding a feature to activate Pipenv virtualenvs dynamically.
+
+
 ## 0.1.5 (2019-02-25)
 
 ### New features

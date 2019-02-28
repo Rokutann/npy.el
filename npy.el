@@ -710,7 +710,7 @@ MORE-SPECS are additional or overriding values passed to
            more-specs)))
 
 ;;;###autoload
-(npy-info-add-help '("python372api"))
+(npy-info-add-help '("python372full"))
 
 (defun npy-info-lookup-transform-entry (entry)
   "Transform a Python index ENTRY to a help item."
