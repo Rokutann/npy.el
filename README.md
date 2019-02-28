@@ -16,25 +16,22 @@ inferior processes **virtualenv-dedicated inferior python processes**.
 Some of npy.el's features:
 
 * spawn a virtualenv-dedicated inferior python process for a Pipenv project
-* send a Python code chunk from multiple Python file buffers in a Pipenv project
-  to the virtualenv-dedicated inferior python process for the project
-* dispatch Python code chunks to appropriate virtualenv-dedicated inferior
-  python processes when you have spawned multiple virtualenv-dedicated inferior
-  python processes for different Pipenv projects
+* dispatch Python code chunks from a `python-mode` buffer to the
+  appropriate virtualenv-dedicated inferior python process when you
+  have spawned multiple virtualenv-dedicated inferior python processes
+  for different Pipenv projects
 * spawn a viartualenv-dedicated inferior python process associated
-  only with a python-mode buffer. We call this type of processes
+  only with a `python-mode` buffer. We call this type of processes
   **virtualenv-buffer-dedicated inferior python processes**
-* change buffer's association to a Pipenv project automatically when
-  you write out the content of the buffer as a file under other Pipenv project
 * spawn a python scratch buffer associated or associatable with a
   virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
   process. We call this type of scratch buffers
   **virtualenv-dedicated** or **virtualenv-buffer-dedicated python
   scratch buffers**
-* dynamically activate and deactivate the virtualenv when you switch
+* dynamically activate and deactivate virtualenvs when you switch
   back-and-forth between buffers visiting files in different Pipenv
-  projects. This is for other Python related modes such as `pytest.el`
-  and `python-pytest.el`
+  projects. This is for other pythonic modes such as `pytest.el` and
+  `python-pytest.el`
 * Enable `info-lookup-symbol` for the Python official documents. The
   info files for version 3.7.2 is included
 * spawn a Pipenv shell for a Pipenv project
@@ -65,7 +62,7 @@ customize `npy-keymap-prefix` to whatever works best for you.
 `npy-mode` is automatically enabled when you open a Python file, i.e.
 it's hooked to the `python-mode`.
 
-### Spawn Virtualenv-dedicated Inferior Python or Python Scratch buffers
+### Spawn Virtualenv-dedicated Inferior Python and Python Scratch buffers
 
 When `npy-mode` is turned on, the mode line shows the Pipenv project
 the file the buffer is visiting belongs to.  The lookup for a Pipenv
@@ -89,6 +86,11 @@ mode lines look like **Py[v:hello_world;b:hello.py]** and
 inferior python processes only associated with the `python-mode`
 buffer where it spawned. Other buffers visiting files in the same
 Pipenv project can't send code chunks to the process.
+
+When you write out the content of a buffer visiting a file in a Pipenv
+project as a file under a different Pipenv project, `npy-mode`
+automatically change the buffer's association to the new Pipenv
+project.
 
 Note: The `python-mode` defines two types of inferior python
 processes: global and (buffer-)dedicated. Their precedence order is:
@@ -115,7 +117,8 @@ process by <kbd>M-x</kbd> <kbd>npy-scratch</kbd>.
 Enable the feature by <kbd>M-x</kbd>
 <kbd>npy-activate-virtualenv-dynamic</kbd>. Thereafter, the feature
 supplies the appropriate executable search path information to other
-modes such as `pytest.el` and `python-pytest.el` per buffer.
+pythonic modes such as `pytest.el` and `python-pytest.el` per buffer
+base.
 
 Disable the feature by <kbd>M-x</kbd> <kbd>npy-deactivate-virtualenv-dynamic</kbd>.
 
