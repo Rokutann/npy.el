@@ -775,7 +775,7 @@ MORE-SPECS are additional or overriding values passed to
 
 ;;; Virtualenv activate automatic functions.
 
-(defun npy-activate-virtualenv-automatic ()
+(defun npy-activate-virtualenv-dynamic ()
   "Activate and change virtualenvs automatically following buffer positions in the system."
   (interactive)
   (advice-add 'make-process :around #'npy-advise-process-creation)
@@ -787,7 +787,7 @@ MORE-SPECS are additional or overriding values passed to
 ;; mode which requires this advice to work with virtualenvs, we'll
 ;; uncomment this.
 
-(defun npy-deactivate-virtualenv-automatic ()
+(defun npy-deactivate-virtualenv-dynamic ()
   "Deactivate virtualenv automatic."
   (interactive)
   (advice-remove 'make-process  #'npy-advise-process-creation)
@@ -810,8 +810,8 @@ MORE-SPECS are additional or overriding values passed to
 (defun npy-advise-process-creation (orig-fun &rest orig-args)
   "Tweak `exec-path' and PATH during a `make-process' call.
 
-ORIG-FUN should be `make-process', and ORIG-ARGS is the arguments
-when it's called."
+Currently, ORIG-FUN should be `make-process', and ORIG-ARGS is
+the arguments when it's called."
   (npy--debug "npy-advise-process-creation called in %s" (current-buffer))
   (let* ((project-name (gpc-get 'pipenv-project-name npy-env)))
     (npy--debug "project-name: %s" project-name)
