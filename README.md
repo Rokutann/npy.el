@@ -31,6 +31,12 @@ Some of npy.el's features:
   process. We call this type of scratch buffers
   **virtualenv-dedicated** or **virtualenv-buffer-dedicated python
   scratch buffers**
+* dynamically activate and deactivate the virtualenv when you switch
+  back-and-forth between buffers visiting files in different Pipenv
+  projects. This is for other Python related modes such as `pytest.el`
+  and `python-pytest.el`
+* Enable `info-lookup-symbol` for the Python official documents. The
+  info files for version 3.7.2 is included
 * spawn a Pipenv shell for a Pipenv project
 
 ## Installation
@@ -56,6 +62,8 @@ customize `npy-keymap-prefix` to whatever works best for you.
 
 `npy-mode` is automatically enabled when you open a Python file, i.e.
 it's hooked to the `python-mode`.
+
+#### Interaction between Pipenv Projects and Inferior Python Buffers
 
 When `npy-mode` is turned on, the mode line shows the Pipenv project
 the file the buffer is visiting belongs to.  The lookup for a Pipenv
@@ -99,6 +107,21 @@ We might change this in a future release.
 You can spawn a scratch buffer for `python-mode` with access to a
 virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
 process by <kbd>M-x</kbd> <kbd>npy-scratch</kbd>.
+
+#### Activate/deactivate Virtualenvs Dynamically
+
+Enable the feature by <kbd>M-x</kbd> <kbd>npy-activate-virtualenv-dynamic</kbd>.
+
+Disable the feature by <kbd>M-x</kbd> <kbd>npy-deactivate-virtualenv-dynamic</kbd>.
+
+#### Info Lookup on Python Official Documents
+
+Install `python372full.info` in your system.
+
+Lookup the info file by <kbd>M-x</kbd> <kbd>info-lookup-symbol</kbd>
+or <kbd>C-h S</kbd>.
+
+#### Pipenv Shell
 
 Spawn a Pipenv shell by <kbd>C-c ' s</kbd> or <kbd>M-x</kbd>
 <kbd>npy-shell</kbd>.
