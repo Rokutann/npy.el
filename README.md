@@ -58,12 +58,14 @@ your Emacs config:
 The initial keymap prefix <kbd>C-c '</kbd> is just a suggestion. Feel free to
 customize `npy-keymap-prefix` to whatever works best for you.
 
-### Basic Usage
+## Basic Usage
+
+### Enable `npy-mode`
 
 `npy-mode` is automatically enabled when you open a Python file, i.e.
 it's hooked to the `python-mode`.
 
-#### Interaction between Pipenv Projects and Inferior Python Buffers
+### Spawn Virtualenv-dedicated Inferior Python or Python Scratch buffers
 
 When `npy-mode` is turned on, the mode line shows the Pipenv project
 the file the buffer is visiting belongs to.  The lookup for a Pipenv
@@ -102,26 +104,29 @@ types: virtualenv-dedicated and virtualenv-buffer-dedicated, is:
 virtualenv-buffer-dedicated > virtualenv-dedicated > buffer-dedicated > global
 ```
 
-We might change this in a future release.
+We might change this order in a future release.
 
 You can spawn a scratch buffer for `python-mode` with access to a
 virtualenv-dedicated or virtualenv-buffer-dedicated inferior python
 process by <kbd>M-x</kbd> <kbd>npy-scratch</kbd>.
 
-#### Activate/deactivate Virtualenvs Dynamically
+### Activate/deactivate Virtualenvs Dynamically
 
-Enable the feature by <kbd>M-x</kbd> <kbd>npy-activate-virtualenv-dynamic</kbd>.
+Enable the feature by <kbd>M-x</kbd>
+<kbd>npy-activate-virtualenv-dynamic</kbd>. Thereafter, the feature
+supplies the appropriate executable search path information to other
+modes such as `pytest.el` and `python-pytest.el` per buffer.
 
 Disable the feature by <kbd>M-x</kbd> <kbd>npy-deactivate-virtualenv-dynamic</kbd>.
 
-#### Info Lookup on Python Official Documents
+### Lookup Python Official Documents
 
 Install `python372full.info` in your system.
 
 Lookup the info file by <kbd>M-x</kbd> <kbd>info-lookup-symbol</kbd>
 or <kbd>C-h S</kbd>.
 
-#### Pipenv Shell
+### Spawn a Pipenv Shell
 
 Spawn a Pipenv shell by <kbd>C-c ' s</kbd> or <kbd>M-x</kbd>
 <kbd>npy-shell</kbd>.
