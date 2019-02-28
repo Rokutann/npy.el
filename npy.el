@@ -775,7 +775,7 @@ MORE-SPECS are additional or overriding values passed to
 
 ;;; Virtualenv activate automatic functions.
 
-(defun npy-activate-virtualenv-dynamic ()
+(defun npy-activate-virtualenv-automatic ()
   "Activate and change virtualenvs automatically following buffer positions in the system."
   (interactive)
   (advice-add 'make-process :around #'npy-advise-process-creation)
@@ -787,7 +787,7 @@ MORE-SPECS are additional or overriding values passed to
 ;; mode which requires this advice to work with virtualenvs, we'll
 ;; uncomment this.
 
-(defun npy-deactivate-virtualenv-dynamic ()
+(defun npy-deactivate-virtualenv-automatic ()
   "Deactivate virtualenv automatic."
   (interactive)
   (advice-remove 'make-process  #'npy-advise-process-creation)

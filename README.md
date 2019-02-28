@@ -28,7 +28,7 @@ Some of npy.el's features:
   process. We call this type of scratch buffers
   **virtualenv-dedicated** or **virtualenv-buffer-dedicated python
   scratch buffers**
-* dynamically activate and deactivate virtualenvs when you switch
+* automatically change the activated virtualenv when you switch
   back-and-forth between buffers visiting files in different Pipenv
   projects. This is for other pythonic modes such as `pytest.el` and
   `python-pytest.el`
@@ -115,12 +115,13 @@ process by <kbd>M-x</kbd> <kbd>npy-scratch</kbd>.
 ### Activate/deactivate Virtualenvs Dynamically
 
 Enable the feature by <kbd>M-x</kbd>
-<kbd>npy-activate-virtualenv-dynamic</kbd>. Thereafter, the feature
+<kbd>npy-activate-virtualenv-automatic</kbd>. Thereafter, the feature
 supplies the appropriate executable search path information to other
 pythonic modes such as `pytest.el` and `python-pytest.el` per buffer
 base.
 
-Disable the feature by <kbd>M-x</kbd> <kbd>npy-deactivate-virtualenv-dynamic</kbd>.
+Disable the feature by <kbd>M-x</kbd>
+<kbd>npy-deactivate-virtualenv-automatic</kbd>.
 
 ### Lookup Python Official Documents
 
