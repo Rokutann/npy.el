@@ -132,7 +132,7 @@ or <kbd>C-h S</kbd>.
 This package contains two info files: `python372full.info` and
 `python372api.info` in the data/info directory. `python372api.info`
 only contains The Python Language Reference, The Python Standard
-Library, and Python/C API Reference Manual,
+Library, and Python/C API Reference Manual.
 
 ### Spawn a Pipenv Shell
 
