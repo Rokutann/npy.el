@@ -33,7 +33,7 @@ Some of npy.el's features:
   projects. This is for other pythonic modes such as `pytest.el` and
   `python-pytest.el`
 * Enable `info-lookup-symbol` for the Python official documents. The
-  info files for version 3.7.2 is included
+  info files for Python version 3.7.2 are included
 * spawn a Pipenv shell for a Pipenv project
 
 ## Installation
@@ -124,10 +124,15 @@ Disable the feature by <kbd>M-x</kbd> <kbd>npy-deactivate-virtualenv-dynamic</kb
 
 ### Lookup Python Official Documents
 
-Install `python372full.info` in your system.
+Install `python372full.info` in your system. 
 
 Lookup the info file by <kbd>M-x</kbd> <kbd>info-lookup-symbol</kbd>
 or <kbd>C-h S</kbd>.
+
+This package contains two info files: `python372full.info` and
+`python372api.info` in the data/info directory. `python372api.info`
+only contains The Python Language Reference, The Python Standard
+Library, and Python/C API Reference Manual,
 
 ### Spawn a Pipenv Shell
 
