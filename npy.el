@@ -454,6 +454,45 @@ The two variables are: `npy--pipenv-project-root' and
       (npy--update-mode-line))
     res))
 
+(defun npy-get-pipenv-project-info (buffer-or-name)
+  "Get and return the Pipenv project information in BUFFER-OR-NAME."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (when buffer
+      (with-current-buffer buffer
+        (list (buffer-name buffer)
+              (gpc-pairs npy-env))))))
+
+(defun npy-get-pipenv-proect-info-from-all-buffers ()
+  "Get and return the Pipenv project information from all buffers."
+  (mapcar 'npy-get-pipenv-project-info (buffer-list)))
+
+(defun npy-clear-pipenv-project-info (buffer-or-name)
+  "Clear the Pipenv project information in BUFFER-OR-NAME."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (when buffer
+      (with-current-buffer buffer
+        (setq npy-env nil)))))
+
+(defun npy-clear-pipenv-proect-info-on-all-buffers ()
+  "Clear the Pipenv project information on all buffers."
+  (npy-mode 0)
+  (gpc-pool-init 'pipenv-virtualenvs npy-env)
+  (gpc-pool-init 'pipenv-no-virtualenvs npy-env)
+  (mapcar 'npy-clear-pipenv-project-info (buffer-list)))
+
+(defun npy-fetch-all-pipenv-project-info (buffer-or-name)
+  "Call `gpc-fetch-all' for `npy-env' on BUFFER-OR-NAME."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (when (and buffer (buffer-live-p buffer)
+               (not (s-matches-p "^ " (buffer-name buffer))))
+      (with-current-buffer buffer
+        (gpc-fetch-all npy-env)))))
+
+(defun npy-fetch-all-pipenve-project-info-at-all-buffers ()
+  "Call `gpc-fetch-all' for `npy-env' on all buffers."
+  (npy-mode 1)
+  (mapc 'npy-fetch-all-pipenv-project-info (buffer-list)))
+
 ;;;
 ;;; User facing functions and its helpers.
 ;;;
