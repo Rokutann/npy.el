@@ -478,7 +478,8 @@ The two variables are: `npy--pipenv-project-root' and
   (npy-mode 0)
   (gpc-pool-init 'pipenv-virtualenvs npy-env)
   (gpc-pool-init 'pipenv-no-virtualenvs npy-env)
-  (mapcar 'npy-clear-pipenv-project-info (buffer-list)))
+  (mapc 'npy-clear-pipenv-project-info (buffer-list))
+  (npy-mode 1))
 
 (defun npy-fetch-all-pipenv-project-info (buffer-or-name)
   "Call `gpc-fetch-all' for `npy-env' on BUFFER-OR-NAME."
@@ -492,6 +493,18 @@ The two variables are: `npy--pipenv-project-root' and
   "Call `gpc-fetch-all' for `npy-env' on all buffers."
   (npy-mode 1)
   (mapc 'npy-fetch-all-pipenv-project-info (buffer-list)))
+
+(defun npy-mode-restart ()
+  "Enable `npy-mode' and initialize all buffers."
+  (interactive)
+  (npy-clear-pipenv-proect-info-on-all-buffers)
+  (npy-fetch-all-pipenve-project-info-at-all-buffers))
+
+(defun npy-mode-stop ()
+  "Disable `npy-mode' and clear all cache data."
+  (interactive)
+  (npy-clear-pipenv-proect-info-on-all-buffers)
+  (npy-mode 0))
 
 ;;;
 ;;; User facing functions and its helpers.
@@ -512,8 +525,9 @@ The two variables are: `npy--pipenv-project-root' and
   "Initialize npy-mode."
   `(progn
      (npy-mode 1)
-     (with-eval-after-load "python"
-       (add-hook 'python-mode-hook 'npy-mode))))
+     ;; (with-eval-after-load "python"
+     ;;   (add-hook 'python-mode-hook 'npy-mode))
+     ))
 
 (defun npy-run-python (&optional dedicated)
   "Run an inferior python process with access to a virtualenv.
