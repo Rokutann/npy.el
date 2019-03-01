@@ -170,9 +170,6 @@ The value should be 'exploring (default), or 'calling."
 (defvar npy--debug nil
   "Display debug info when non-nil.")
 
-(defvar npy--python-shell-virtualenv-root-log nil
-  "A list containing the values of `python-shell-virtualenv-root' called.")
-
 (defun npy--debug (msg &rest args)
   "Print MSG and ARGS like `message', but only if debug output is enabled."
   (when npy--debug
@@ -194,11 +191,11 @@ The value should be 'exploring (default), or 'calling."
         (if dirname
             (let ((root (npy--find-pipenv-project-root-by-exploring dirname)))
               (if root root 'no-virtualenv))
-          'no-virtualenv))
+          'no-virtualenv)) ;; THINKME: Using symbols to distinguish situations is a good idea?
     (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
       (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
             ((stringp pipenv-res) 'no-virtualenv)
-            (t 'ERR)))))
+            (t 'ERR))))) ;; THINKME: Using symbols to distinguish situations is a good idea?
 
 (defun npy-pipenv-project-name-fetcher ()
   "Fetch the Pipenv project name if exists."
@@ -222,16 +219,53 @@ The value should be 'exploring (default), or 'calling."
 
 (defun npy-pipenv-virtualenv-root-fetcher ()
   "Fetch the Pipenv virtualenv root path if exists."
-  (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
-    (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
-          ((stringp pipenv-res) 'no-virtualenv)
-          (t 'ERR))))
+  (let* ((full-dir-path (cond ((buffer-file-name) (f-dirname (f-full (buffer-file-name))))
+                              (default-directory (f-full default-directory))
+                              (t nil)))
+         (maybe-in-pool (if full-dir-path
+                            (npy-env-pipenv-pool-check full-dir-path))))
+    (if maybe-in-pool
+        maybe-in-pool
+      (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
+        (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res))
+               (gpc-pool-pushnew (cons (gpc-get 'pipenv-project-root npy-env) pipenv-res)
+                                 'pipenv-virtualenvs npy-env :test 'equal)
+               pipenv-res)
+              ((stringp pipenv-res)
+               (when full-dir-path
+                 (gpc-pool-delete-if #'(lambda (path) (s-matches-p (concat "^" path) full-dir-path))
+                                     'pipenv-no-virtualenv npy-env)
+                 (gpc-pool-pushnew full-dir-path 'pipenv-no-virtualenvs npy-env :test 'equal))
+               'no-virtualenv)
+              (t 'ERR))))))
+
+(cl-defun npy-env-pipenv-pool-check (full-dir-path)
+  "Check if PATH is under a Pipenv project."
+  (let ((maybe-in-white-pool
+         (gpc-pool-member-if #'(lambda (white-pair)
+                                 (message "match-regex: %s" (concat "^" (car white-pair)))
+                                 (s-matches-p (concat "^" (car white-pair))
+                                              full-dir-path))
+                             'pipenv-virtualenvs npy-env)))
+    (if maybe-in-white-pool
+        (progn
+          (cdar maybe-in-white-pool))
+      (let* ((maybe-in-black-pool
+              (gpc-pool-member-if #'(lambda (black-path)
+                                      (s-matches-p (concat "^" full-dir-path)
+                                                   black-path))
+                                  'pipenv-no-virtualenvs npy-env)))
+        (if maybe-in-black-pool
+            'no-virtualenv
+          nil)))))
 
 (gpc-init npy-env
   '((pipenv-project-root nil npy-pipenv-project-root-fetcher)
     (pipenv-project-name nil npy-pipenv-project-name-fetcher)
     (pipenv-project-name-with-hash nil npy-pipenv-project-name-with-hash-fetcher)
     (pipenv-virtualenv-root nil npy-pipenv-virtualenv-root-fetcher)))
+(gpc-pool-init 'pipenv-virtualenvs npy-env)
+(gpc-pool-init 'pipenv-no-virtualenvs npy-env)
 (gpc-make-variable-buffer-local npy-env)
 
 (defvar npy-child-dedicatable-to nil
@@ -438,8 +472,10 @@ The two variables are: `npy--pipenv-project-root' and
 
 (defmacro npy-initialize ()
   "Initialize npy-mode."
-  `(with-eval-after-load "python"
-     (add-hook 'python-mode-hook 'npy-mode)))
+  `(progn
+     (npy-mode 1)
+     (with-eval-after-load "python"
+       (add-hook 'python-mode-hook 'npy-mode))))
 
 (defun npy-run-python (&optional dedicated)
   "Run an inferior python process with access to a virtualenv.
@@ -848,7 +884,7 @@ virtualenv-buffer-dedicated python scratch buffers."
   :require 'npy
   :lighter npy--mode-line
   :keymap npy-mode-map
-  :global nil
+  :global t
   (cond
    (npy-mode
     (add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
