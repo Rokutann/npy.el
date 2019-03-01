@@ -52,57 +52,6 @@
 ;; original `python-mode' buffer, interact with inferior python
 ;; buffers spawned by `npy-run-python'.
 
-;; The virtualenv-dedicated and virtualenv-buffer-dedicated buffers
-;; follows the rules below.
-
-;; Rules:
-
-;; 1. A python-mode buffer visiting a file in a Pipenv project has
-;; npy-child-dedicatable-to set to itself.
-
-;; 2. If npy-child-dedicatable-to is set, the buffer can spawn any
-;; virtualenv-buffer-dedicated buffers, which inherit the
-;; npy-child-dedicatable-to of the parent.
-
-;; 3. If npy-child-dedicatable-to is set, the buffer can spawn any
-;; virtualenv-dedicated buffers, but the npy-child-dedicatable-to of
-;; the spawned buffers will be set to nil in spawned buffers.
-
-;; 4. If npy-child-dedicatable-to is nil, the buffer can not spawn any
-;; virtualenv-dedicated buffers but can spawn any virtualenv-dedicated
-;; buffers.
-
-;; 5. When a virtualenv-buffer-dedicated buffer is spawned from a
-;; python-mode buffer, its npy-dedicated-to is set to that of
-;; python-mode buffer.
-
-;; 6. When a virtualenv-buffer-dedicated buffer is spawned from a
-;; virtualenv-buffer-dedicated buffer, its npy-dedicated-to is set to
-;; npy-child-dedicatable-to of the parent buffer.
-
-;; 7. If the buffer to be spawned already exists and alive,
-;; pop-to-buffer it.
-
-;; 8. If the buffer to be spawned already exists but killed, raise an
-;; error.
-
-;; 9. If the buffer npy-child-dedicatable-to points is already killed
-;; when spawning a virtualenv-buffer-dedicated buffer, raise an error.
-
-;; 10. The precedence list of a python-mode buffer visiting a file in
-;; a Pipenv project is: virtualenv-buffer-dedicated,
-;; virtualenv-dedicated, dedicated, global.
-
-;; 11. The precedence list of a virtualenv-dedicated buffer is:
-;; virtualenv-dedicated, dedicated, global.
-
-;; 12. The precedence list of a virtualenv-buffer-dedicated buffer is:
-;; virtualenv-buffer-dedicated, virtualenv-dedicated, dedicated,
-;; global.
-
-;; 13. If the buffer to send a string exists but killed, don't raise
-;; an error, just move down the precedence list.
-
 ;; Installation:
 
 ;; Place this file on a directory in your `load-path', and explicitly
