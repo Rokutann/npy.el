@@ -762,10 +762,7 @@ MORE-SPECS are additional or overriding values passed to
 
 (defun npy-advise-find-file-noselect (orig-fun &rest orig-args)
   "Advise `find-file-noselet' :around with ORIG-FUN and ORIG-ARGS."
-  (npy--debug "npy-advise-find-file-noselect called: %s" orig-args)
   (let ((res (apply orig-fun orig-args)))
-    (npy--debug "its response: %s" res)
-    (npy--debug "its buffer-file-name: %s" (buffer-file-name res))
     (when (and res (buffer-file-name res))
       (with-current-buffer res
         (gpc-get 'pipenv-project-name npy-env)
@@ -777,21 +774,17 @@ MORE-SPECS are additional or overriding values passed to
 
 Currently, ORIG-FUN should be `make-process', and ORIG-ARGS is
 the arguments when it's called."
-  (npy--debug "npy-advise-process-creation called in %s" (current-buffer))
   (let* ((project-name (gpc-get 'pipenv-project-name npy-env)))
-    (npy--debug "project-name: %s" project-name)
     (if (npy-env-valid-p project-name)
         (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
                (venv-bin-path (concat venv-root "/bin/"))
                ;; (exec-path (cons venv-bin-path exec-path)) ; `make-process' doesn't need this.
                (orig-path (getenv "PATH")))
           (setenv "PATH" (concat venv-bin-path ":" orig-path))
-          (npy--debug "temporary path: %s" (getenv "PATH"))
           (unwind-protect
               (let* ((res (apply orig-fun orig-args))
                      (paths (s-split ":" (getenv "PATH")))
                      (new-paths (cl-remove venv-bin-path paths :test 'equal)))
-                (npy--debug "new paths: %s" new-paths)
                 (setenv "PATH" (s-join ":" new-paths))
                 res)
             (setenv "PATH" orig-path)))
@@ -808,7 +801,6 @@ it's called."
       (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
              (venv-bin-path (when (npy-env-valid-p venv-root)
                               (concat venv-root "/bin/"))))
-        (npy--debug "npy-advice-getenv called: args=%s venv-root %s" orig-args venv-root)
         (when venv-bin-path
           (let* ((path-list (s-split ":" res))
                  (clean-paths (s-join ":" (cl-remove venv-bin-path path-list :test 'equal))))
