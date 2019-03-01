@@ -243,7 +243,6 @@ The value should be 'exploring (default), or 'calling."
   "Check if PATH is under a Pipenv project."
   (let ((maybe-in-white-pool
          (gpc-pool-member-if #'(lambda (white-pair)
-                                 (message "match-regex: %s" (concat "^" (car white-pair)))
                                  (s-matches-p (concat "^" (car white-pair))
                                               full-dir-path))
                              'pipenv-virtualenvs npy-env)))
