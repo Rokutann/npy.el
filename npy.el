@@ -191,11 +191,11 @@ The value should be 'exploring (default), or 'calling."
         (if dirname
             (let ((root (npy--find-pipenv-project-root-by-exploring dirname)))
               (if root root 'no-virtualenv))
-          'no-virtualenv)) ;; THINKME: Using symbols to distinguish situations is a good idea?
+          'no-virtualenv)) ;; THINKME: Using symbols for marking is a good idea?
     (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
       (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
             ((stringp pipenv-res) 'no-virtualenv)
-            (t 'ERR))))) ;; THINKME: Using symbols to distinguish situations is a good idea?
+            (t 'ERR))))) ;; THINKME: Using symbols for marking is a good idea?
 
 (defun npy-pipenv-project-name-fetcher ()
   "Fetch the Pipenv project name if exists."
@@ -219,23 +219,27 @@ The value should be 'exploring (default), or 'calling."
 
 (defun npy-pipenv-virtualenv-root-fetcher ()
   "Fetch the Pipenv virtualenv root path if exists."
-  (let* ((full-dir-path (cond ((buffer-file-name) (f-dirname (f-full (buffer-file-name))))
-                              (default-directory (f-full default-directory))
-                              (t nil)))
+  (let* ((full-dir-path
+          (cond ((buffer-file-name) (f-dirname (f-full (buffer-file-name))))
+                (default-directory (f-full default-directory))
+                (t nil)))
          (maybe-in-pool (if full-dir-path
                             (npy-env-pipenv-pool-check full-dir-path))))
     (if maybe-in-pool
         maybe-in-pool
       (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
         (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res))
-               (gpc-pool-pushnew (cons (gpc-get 'pipenv-project-root npy-env) pipenv-res)
-                                 'pipenv-virtualenvs npy-env :test 'equal)
+               (gpc-pool-pushnew
+                (cons (gpc-get 'pipenv-project-root npy-env) pipenv-res)
+                'pipenv-virtualenvs npy-env :test 'equal)
                pipenv-res)
               ((stringp pipenv-res)
                (when full-dir-path
-                 (gpc-pool-delete-if #'(lambda (path) (s-matches-p (concat "^" path) full-dir-path))
+                 (gpc-pool-delete-if #'(lambda (path)
+                                         (s-matches-p (concat "^" path) full-dir-path))
                                      'pipenv-no-virtualenv npy-env)
-                 (gpc-pool-pushnew full-dir-path 'pipenv-no-virtualenvs npy-env :test 'equal))
+                 (gpc-pool-pushnew full-dir-path
+                                   'pipenv-no-virtualenvs npy-env :test 'equal))
                'no-virtualenv)
               (t 'ERR))))))
 
@@ -404,10 +408,13 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
            (let ((res (apply orig-fun orig-args)))
              res))
           (t (let ((associated-file-path
-                    (cond (npy-dedicated-to ; means virtualenv-buffer-dedicated inf-py-buf or scratch-buf.
+                    (cond (npy-dedicated-to
+                           ;; means virtualenv-buffer-dedicated inf-py-buf or scratch-buf.
                            (buffer-file-name npy-dedicated-to))
-                          (npy-scratch-buffer nil) ; means virtualenv-dedicated scratch-buf.
-                          ((derived-mode-p 'inferior-python-mode) nil) ; means virtualenv-dedicated inf-py-buf.
+                          (npy-scratch-buffer nil)
+                          ;; means virtualenv-dedicated scratch-buf.
+                          ((derived-mode-p 'inferior-python-mode) nil)
+                          ;; means virtualenv-dedicated inf-py-buf.
                           (t (buffer-file-name)))))
                (let* ((venv-buffer-dedicated-process-name)
                       (venv-buffer-dedicated-running)
@@ -424,18 +431,22 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                          (comint-check-proc venv-buffer-dedicated-process-name)))
                  (cond (venv-buffer-dedicated-running venv-buffer-dedicated-process-name)
                        (venv-dedicated-running venv-dedicated-process-name)
-                       (t (let ((res (apply orig-fun orig-args))) ;; Maybe raising an error is better.
+                       (t (let ((res (apply orig-fun orig-args)))
+                            ;; Maybe raising an error is better.
                             res)))))))))
 
 ;;; Functions to manage the modeline.
 
 (defun npy-default-mode-line ()
   "Report the Pipenv project name associated with the buffer in the modeline."
-  (format "%s[v:%s]"
-          npy-mode-line-prefix
-          (gpc-get 'pipenv-project-name npy-env)))
+  (let ((root (gpc-get 'pipenv-project-name npy-env)))
+    (format "%s[v:%s]"
+            npy-mode-line-prefix
+            (cond ((npy-env-valid-p root) root)
+                  ((eq root 'no-virtualenv) "-")
+                  (t "E")))))
 
-(defun npy--update-mode-line ()
+(defun npy-update-mode-line ()
   "Update the npy modeline."
   (let ((mode-line (funcall npy-mode-line-function)))
     (setq npy--mode-line mode-line))
@@ -451,7 +462,7 @@ The two variables are: `npy--pipenv-project-root' and
   (let ((res (apply orig-fun orig-args)))
     (when (bound-and-true-p npy-mode)
       (gpc-fetch-all npy-env)
-      (npy--update-mode-line))
+      (npy-update-mode-line))
     res))
 
 (defun npy-get-pipenv-project-info (buffer-or-name)
@@ -510,23 +521,21 @@ The two variables are: `npy--pipenv-project-root' and
 ;;; User facing functions and its helpers.
 ;;;
 
-(defmacro npy--when-valid (var it)
+(defmacro npy-when-valid-do (var it)
   "Do IT when VAR is valid, otherwise show a warning."
   (declare (indent 1))
   `(cond ((npy-env-valid-p ,var)
           ,it)
          ((eq ,var 'no-virtualenv)
-          (if (buffer-file-name)
-              (message "No virtualenv has been created for this project yet!")
-            (message "No virtualenv got deteced. Maybe because the buffer is not associated with a file.")))
+          (message "No virtualenv has been created for this project yet!"))
          (t (message "Something wrong has happend in npy."))))
 
 (defmacro npy-initialize ()
   "Initialize npy-mode."
   `(progn
      (npy-mode 1)
-     ;; (with-eval-after-load "python"
-     ;;   (add-hook 'python-mode-hook 'npy-mode))
+     (with-eval-after-load "python"
+       (add-hook 'python-mode-hook 'npy-mode))
      ))
 
 (defun npy-run-python (&optional dedicated)
@@ -539,23 +548,27 @@ DEDICATED inferior python process with access to the virtualenv."
        (list t)
      (list nil)))
   (when (and dedicated (not npy-child-dedicatable-to))
-    (error "You are not in a buffer associated with a file you can dedicate to"))
+    (error "You're not in a buffer associated with a file you can dedicate to"))
   (gpc-fetch-all npy-env)
   (let ((project-name (gpc-val 'pipenv-project-name npy-env)))
     (unless (npy-env-valid-p project-name)
-      (error "You are not in a buffer associated with a Pipenv project: project-name is \"%s\"" project-name))
+      (error "You're not in a buffer associated with a Pipenv project: \"%s\""
+             project-name))
     (let* ((spawner-buffer (current-buffer))
            (maybe-dedicate-to npy-child-dedicatable-to)
            (venv-root (gpc-val 'pipenv-virtualenv-root npy-env))
            (exec-path (cons venv-root exec-path))
            (python-shell-virtualenv-root venv-root)
-           (process-name (cond (dedicated (format "%s[v:%s;b:%s]"
-                                                  python-shell-buffer-name
-                                                  project-name
-                                                  (f-filename (buffer-file-name npy-child-dedicatable-to))))
-                               (t (format "%s[v:%s]"
-                                          python-shell-buffer-name
-                                          project-name)))))
+           (process-name
+            (cond (dedicated
+                   (format "%s[v:%s;b:%s]"
+                           python-shell-buffer-name
+                           project-name
+                           (f-filename (buffer-file-name
+                                        npy-child-dedicatable-to))))
+                  (t (format "%s[v:%s]"
+                             python-shell-buffer-name
+                             project-name)))))
       (prog1
           (pop-to-buffer
            (python-shell-make-comint (python-shell-calculate-command)
@@ -571,8 +584,8 @@ DEDICATED inferior python process with access to the virtualenv."
 (defun npy-display-pipenv-project-root ()
   "Show the path to the Pipenv project root directory."
   (interactive)
-  (npy--update-mode-line)
-  (npy--when-valid (gpc-get 'pipenv-project-root npy-env)
+  (npy-update-mode-line)
+  (npy-when-valid-do (gpc-get 'pipenv-project-root npy-env)
     (message "Project: %s" (gpc-get 'pipenv-project-root npy-env))))
 
 (defun npy-update-pipenv-project-root ()
@@ -584,8 +597,8 @@ DEDICATED inferior python process with access to the virtualenv."
 (defun npy-display-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
-  (npy--update-mode-line)
-  (npy--when-valid
+  (npy-update-mode-line)
+  (npy-when-valid-do
       (gpc-get 'pipenv-virtualenv-root npy-env)
     (message "Virtualenv: %s" (gpc-get 'pipenv-virtualenv-root npy-env))))
 
@@ -617,16 +630,18 @@ the buffer spawning it."
      (list nil)))
   (let ((project-name (gpc-val 'pipenv-project-name npy-env)))
     (unless (npy-env-valid-p project-name)
-      (error "You are not in a buffer associated with a Pipenv project: project-name is \"%s\"" project-name))
+      (error "You're not in a buffer associated with a Pipenv project:\"%s\""
+             project-name))
     (when (and dedicated (not npy-child-dedicatable-to))
-      (error "You are not in a buffer associated with a file you can dedicate to"))
+      (error "You're not in a buffer associated with a file you can dedicate to"))
     (let* ((spawner-buffer (current-buffer))
            (maybe-dedicate-to npy-child-dedicatable-to)
            (mode 'python-mode)
            (name (cond (dedicated
                         (format "*pyscratch[v:%s;b:%s]*"
                                 project-name
-                                (f-filename (buffer-file-name npy-child-dedicatable-to))))
+                                (f-filename (buffer-file-name
+                                             npy-child-dedicatable-to))))
                        (t (format "*pyscratch[v:%s]*" project-name))))
            (scratch-buf (get-buffer name)))
       (if (bufferp scratch-buf)
@@ -643,13 +658,14 @@ the buffer spawning it."
           (setq npy-scratch-buffer t)
           (gpc-copy npy-env spawner-buffer scratch-buf)
           (gpc-lock npy-env)
-          (npy--update-mode-line)
+          (npy-update-mode-line)
           (when content (save-excursion (insert content)))
           (if dedicated
               (progn
                 (setq npy-dedicated-to maybe-dedicate-to)
                 (setq npy-child-dedicatable-to maybe-dedicate-to))
-            (setq npy-child-dedicatable-to nil) ; We need this to overwrite the value set by `npy-mode'.
+            (setq npy-child-dedicatable-to nil)
+            ;; We need this to overwrite the value set by `npy-mode'.
             ))))))
 
 (defun npy-show-python-environment ()
@@ -794,7 +810,7 @@ MORE-SPECS are additional or overriding values passed to
 ;;; Virtualenv activate automatic functions.
 
 (defun npy-activate-virtualenv-automatic ()
-  "Activate and change virtualenvs automatically following buffer positions in the system."
+  "Switch the activated virtualenv automatically."
   (interactive)
   (advice-add 'make-process :around #'npy-advise-process-creation)
   (advice-add 'getenv :around #'npy-advice-getenv)
@@ -831,7 +847,8 @@ the arguments when it's called."
     (if (npy-env-valid-p project-name)
         (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
                (venv-bin-path (concat venv-root "/bin/"))
-               ;; (exec-path (cons venv-bin-path exec-path)) ; `make-process' doesn't need this.
+               ;; (exec-path (cons venv-bin-path exec-path))
+               ;; `make-process' doesn't need this.
                (orig-path (getenv "PATH")))
           (setenv "PATH" (concat venv-bin-path ":" orig-path))
           (unwind-protect
@@ -856,17 +873,28 @@ it's called."
                               (concat venv-root "/bin/"))))
         (when venv-bin-path
           (let* ((path-list (s-split ":" res))
-                 (clean-paths (s-join ":" (cl-remove venv-bin-path path-list :test 'equal))))
+                 (clean-paths
+                  (s-join ":" (cl-remove venv-bin-path path-list :test 'equal))))
             (setq res (concat venv-bin-path ":" clean-paths))))))
     res))
 
+(defun npy-find-file-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
+
 (defun npy-dired-mode-hook-function ()
   "Set the name, root, and venv of a Pipenv project."
-  (npy-env-initialize :virtualenv t))
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
 
 (defun npy-compilation-mode-hook-function ()
   "Set the name, root, and venv of a Pipenv project."
-  (npy-env-initialize :virtualenv t))
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
 
 (cl-defun npy-env-initialize (&key (virtualenv nil))
   "Initialize `npy-env' and other variables prefixed with 'npy-env-'.
@@ -931,12 +959,14 @@ virtualenv-buffer-dedicated python scratch buffers."
   :global t
   (cond
    (npy-mode
+    (add-hook 'find-file-hook 'npy-find-file-hook-function)
     (add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     (add-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
     (advice-add 'python-shell-get-buffer :around #'npy-python-shell-get-buffer-advice)
     (advice-add 'write-file :around #'npy-write-file-advice)
     (npy-env-initialize :virtualenv t))
    (t
+    (remove-hook 'find-file-hook 'npy-find-file-hook-function)
     (remove-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     (remove-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
     (advice-remove 'python-shell-get-buffer #'npy-python-shell-get-buffer-advice)
