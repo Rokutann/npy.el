@@ -61,10 +61,7 @@
 ;;     (npy-initialize)
 ;;
 
-
-;;;
 ;;; Code:
-;;;
 
 (require 'cl-lib)
 (require 'gpc)
@@ -79,8 +76,8 @@
   :prefix "npy-"
   :group 'python)
 
+
 ;;; User customization
-
 (defcustom npy-pipenv-executable
   "pipenv"
   "The name of the Pipenv executable."
@@ -165,7 +162,7 @@ The value should be 'exploring (default), or 'calling."
   :group 'npy
   :type 'symbol)
 
-;;; Vars for Debug
+;; Vars for Debug
 
 (defvar npy--debug nil
   "Display debug info when non-nil.")
@@ -175,12 +172,12 @@ The value should be 'exploring (default), or 'calling."
   (when npy--debug
     (apply #'message msg args)))
 
-;;; A variable for the mode line.
+;; A variable for the mode line.
 
 (defvar-local npy--mode-line npy-mode-line-prefix)
 
+
 ;;; Pipenv project and virtualenv core variables and their access functions.
-
 (defun npy-pipenv-project-root-fetcher ()
   "Fetch the Pipenv project root path if exists."
   (if (eq npy-pipenv-project-detection 'exploring)
@@ -291,8 +288,8 @@ The value should be 'exploring (default), or 'calling."
   "Return the filename of PATH with a Pipenv hash suffix."
   (f-filename (npy-pipenv-compat-virtualenv-name path)))
 
+
 ;;; Pipenv compatibility functions.
-
 (defun npy-pipenv-compat--sanitize (name)
   "Return sanitized NAME.
 
@@ -373,8 +370,8 @@ if it's longer than 42."
       (npy-pipenv-compat--get-virtualenv-hash name)
     (concat sanitized "-" encoded-hash)))
 
+
 ;;; Functions to find Pipenv information by exploring directory structures.
-
 (defun npy--find-pipenv-project-root-by-exploring (dirname)
   "Return the Pipenv project root if DIRNAME is under a project, otherwise nil."
   (npy--find-pipenv-project-root-by-exploring-impl (f-split (f-full dirname))))
@@ -395,8 +392,8 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
   "Return t if DIRNAME is a Pipenv project root, otherwise nil."
   (f-exists-p (concat (f-full dirname) "/Pipfile")))
 
+
 ;;; Functions for the integrations with the inferior python mode.
-
 (defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
   "Tweak the buffer entity in ORIG-ARGS.
 
@@ -435,8 +432,8 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                             ;; Maybe raising an error is better.
                             res)))))))))
 
+
 ;;; Functions to manage the modeline.
-
 (defun npy-default-mode-line ()
   "Report the Pipenv project name associated with the buffer in the modeline."
   (let ((root (gpc-get 'pipenv-project-name npy-env)))
@@ -517,10 +514,8 @@ The two variables are: `npy--pipenv-project-root' and
   (npy-clear-pipenv-proect-info-on-all-buffers)
   (npy-mode 0))
 
-;;;
+
 ;;; User facing functions and its helpers.
-;;;
-
 (defmacro npy-when-valid-do (var it)
   "Do IT when VAR is valid, otherwise show a warning."
   (declare (indent 1))
@@ -690,10 +685,9 @@ the buffer spawning it."
          npy-dedicated-to
          npy-child-dedicatable-to))
 
+
 ;;; Info lookup support (EXPERIMENTAL)
-
 ;; Currently this extension is largely based on `pydoc-info' by Jon Waltman.
-
 ;;;###autoload
 (require 'info-look)
 
@@ -807,8 +801,8 @@ MORE-SPECS are additional or overriding values passed to
 
 (advice-add 'info-insert-file-contents :after #'npy-auto-hide-info-note-references)
 
+
 ;;; Virtualenv activate automatic functions.
-
 (defun npy-activate-virtualenv-automatic ()
   "Switch the activated virtualenv automatically."
   (interactive)
@@ -926,8 +920,8 @@ hook of the buffer you need to initialize npy-env and likes on."
 Currently, this function only check if the object is a string."
   (if (stringp object) t nil))
 
+
 ;;; Defining the minor mode.
-
 (defvar npy-command-map
   (let ((map (make-sparse-keymap)))
     ;; Shell interaction
@@ -950,14 +944,17 @@ Currently, this function only check if the object is a string."
 
 ;;;###autoload
 (define-minor-mode npy-mode
-  "Minor mode to provide extensions to the Python development support in Emacs.
+  "Minor mode to extend the Python development support in Emacs.
 
-Currently, this mode supports the integration of Pipenv
-virtualenvs and Emacs inferior python buffers.  You can spawn
-virtualenv-dedicated python inferior python buffers,
-virtualenv-buffer-dedicated inferior python buffers,
-virtualenv-dedicated python scratch buffers, and
-virtualenv-buffer-dedicated python scratch buffers."
+When called interactively, toggle `npy-mode'.  With prefix ARG,
+enable `npy-mode' if ARG is positive, otherwise disable
+it.
+
+When called from Lisp, enable `npy-mode' if ARG is omitted, nil
+or positive.  If ARG is `toggle', toggle `npy-mode'.  Otherwise
+behave as if called interactively.
+
+\\{npy-mode-map}"
   :group 'npy
   :require 'npy
   :lighter npy--mode-line
