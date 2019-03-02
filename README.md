@@ -49,7 +49,7 @@ your Emacs config:
 
 ```el
 (require 'npy)
-(npy-initialize)
+(npy-mode 1)
 ```
 
 The initial keymap prefix <kbd>C-c '</kbd> is just a suggestion. Feel free to

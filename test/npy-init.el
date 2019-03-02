@@ -57,8 +57,8 @@
   "Sleep for duration after inputting somethng to a Python interpreter.")
 
 (load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
-
-(npy-initialize)
+(npy-mode 1)
+;;(npy-initialize)
 
 (provide 'npy-init)
 ;;; npy-init.el ends here

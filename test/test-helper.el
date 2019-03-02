@@ -59,15 +59,18 @@ pair is the content for that file."
 (defmacro with-file-buffers (files &rest body)
   "Execute BODY after creating buffers visiting FILES."
   (declare (indent 1))
-  (let ((file (cl-gensym "file-")))
-    `(progn
+  (let ((file (cl-gensym "file-"))
+        (buffers (cl-gensym "buffers-"))
+        (buffer (cl-gensym "buffer-")))
+    `(let ((,buffers nil))
        (dolist (,file ',files)
-         (@-find-file ,file))
+         (push (@-find-file ,file) ,buffers))
        (unwind-protect
            (progn
              ,@body)
-         (dolist (,file ',files)
-           (kill-buffer (f-filename ,file)))))))
+         (dolist (,buffer ,buffers)
+           (when (buffer-live-p ,buffer)
+             (kill-buffer ,buffer)))))))
 
 (defmacro @-find-file (filename)
   "Edit file FILENAME."

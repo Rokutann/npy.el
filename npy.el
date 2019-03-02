@@ -530,13 +530,13 @@ The two variables are: `npy--pipenv-project-root' and
           (message "No virtualenv has been created for this project yet!"))
          (t (message "Something wrong has happend in npy."))))
 
-(defmacro npy-initialize ()
-  "Initialize npy-mode."
-  `(progn
-     (npy-mode 1)
-     (with-eval-after-load "python"
-       (add-hook 'python-mode-hook 'npy-mode))
-     ))
+;; (defmacro npy-initialize ()
+;;   "Initialize npy-mode."
+;;   `(progn
+;;      (npy-mode 1)
+;;      (with-eval-after-load "python"
+;;        (add-hook 'python-mode-hook 'npy-mode))
+;;      ))
 
 (defun npy-run-python (&optional dedicated)
   "Run an inferior python process with access to a virtualenv.
@@ -878,6 +878,12 @@ it's called."
             (setq res (concat venv-bin-path ":" clean-paths))))))
     res))
 
+(defun npy-python-mode-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
+
 (defun npy-find-file-hook-function ()
   "Set the name, root, and venv of a Pipenv project."
   (npy-env-initialize :virtualenv t)
@@ -959,6 +965,7 @@ virtualenv-buffer-dedicated python scratch buffers."
   :global t
   (cond
    (npy-mode
+    (add-hook 'python-mode-hook 'npy-python-mode-hook-function)
     (add-hook 'find-file-hook 'npy-find-file-hook-function)
     (add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     (add-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
@@ -966,6 +973,7 @@ virtualenv-buffer-dedicated python scratch buffers."
     (advice-add 'write-file :around #'npy-write-file-advice)
     (npy-env-initialize :virtualenv t))
    (t
+    (remove-hook 'python-mode-hook 'npy-python-mode-hook-function)
     (remove-hook 'find-file-hook 'npy-find-file-hook-function)
     (remove-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
     (remove-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
