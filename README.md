@@ -41,8 +41,8 @@ Some of npy.el's features:
 Ensure you have four elisp packages, `f`, `s`, `nalist`, and `gpc`,
 installed in your Emacs prior to the npy.el installation. You can get
 `f` and `s` from MELPA or Github, and
-`[nalist](https://github.com/mukuge/nalist.el)` and
-`[gpc](https://github.com/mukuge/gpc.el)` from Github.
+[nalist](https://github.com/mukuge/nalist.el) and
+[gpc](https://github.com/mukuge/gpc.el) from Github.
 
 Place npy.el on a directory in your `load-path`, and add this to your
 Emacs config:
@@ -60,13 +60,13 @@ customize `npy-keymap-prefix` to whatever works best for you.
 ### Enable/disable `npy-mode`
 
 From v0.1.6, `npy-mode` is a globalized minor mode. So, when
-`npy-mode` is called interactively, it toggles `npy-mode' globally.
-With prefix ARG, it enables `npy-mode' if ARG is positive, otherwise
-disable it.
+`npy-mode` is called interactively, it toggles `npy-mode` globally.
+With a prefix argument, it enables `npy-mode` if the argument is positive,
+otherwise disable it.
 
-When called from Lisp, it enables `npy-mode` if ARG is omitted, nil or
-positive.  If ARG is `toggle`, toggle `npy-mode`.  Otherwise behave as
-if called interactively.
+When called from Lisp, it enables `npy-mode` if the argument is
+omitted, nil or positive.  If the argument is `toggle`, toggle
+`npy-mode`.  Otherwise behave as if called interactively.
 
 ### Spawn Virtualenv-dedicated Inferior Python buffers and/or Python Scratch buffers
 
