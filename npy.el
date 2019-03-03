@@ -228,7 +228,7 @@ The value should be 'exploring (default), or 'calling."
         (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res))
                (gpc-pool-pushnew
                 (cons (gpc-get 'pipenv-project-root npy-env) pipenv-res)
-                'pipenv-virtualenvs npy-env :test 'equal)
+                'pipenv-known-projects npy-env :test 'equal)
                pipenv-res)
               ((stringp pipenv-res)
                (when full-dir-path
@@ -236,7 +236,7 @@ The value should be 'exploring (default), or 'calling."
                                          (s-matches-p (concat "^" path) full-dir-path))
                                      'pipenv-no-virtualenv npy-env)
                  (gpc-pool-pushnew full-dir-path
-                                   'pipenv-no-virtualenvs npy-env :test 'equal))
+                                   'pipenv-non-virtualenv-dirs npy-env :test 'equal))
                'no-virtualenv)
               (t 'ERR))))))
 
@@ -246,7 +246,7 @@ The value should be 'exploring (default), or 'calling."
          (gpc-pool-member-if #'(lambda (white-pair)
                                  (s-matches-p (concat "^" (car white-pair))
                                               full-dir-path))
-                             'pipenv-virtualenvs npy-env)))
+                             'pipenv-known-projects npy-env)))
     (if maybe-in-white-pool
         (progn
           (cdar maybe-in-white-pool))
@@ -254,7 +254,7 @@ The value should be 'exploring (default), or 'calling."
               (gpc-pool-member-if #'(lambda (black-path)
                                       (s-matches-p (concat "^" full-dir-path)
                                                    black-path))
-                                  'pipenv-no-virtualenvs npy-env)))
+                                  'pipenv-non-virtualenv-dirs npy-env)))
         (if maybe-in-black-pool
             'no-virtualenv
           nil)))))
@@ -264,8 +264,8 @@ The value should be 'exploring (default), or 'calling."
     (pipenv-project-name nil npy-pipenv-project-name-fetcher)
     (pipenv-project-name-with-hash nil npy-pipenv-project-name-with-hash-fetcher)
     (pipenv-virtualenv-root nil npy-pipenv-virtualenv-root-fetcher)))
-(gpc-pool-init 'pipenv-virtualenvs npy-env)
-(gpc-pool-init 'pipenv-no-virtualenvs npy-env)
+(gpc-pool-init 'pipenv-known-projects npy-env)
+(gpc-pool-init 'pipenv-non-virtualenv-dirs npy-env)
 (gpc-make-variable-buffer-local npy-env)
 
 (defvar npy-child-dedicatable-to nil
@@ -484,8 +484,8 @@ The two variables are: `npy--pipenv-project-root' and
 (defun npy-clear-pipenv-proect-info-on-all-buffers ()
   "Clear the Pipenv project information on all buffers."
   (npy-mode 0)
-  (gpc-pool-init 'pipenv-virtualenvs npy-env)
-  (gpc-pool-init 'pipenv-no-virtualenvs npy-env)
+  (gpc-pool-init 'pipenv-known-projects npy-env)
+  (gpc-pool-init 'pipenv-non-virtualenv-dirs npy-env)
   (mapc 'npy-clear-pipenv-project-info (buffer-list))
   (npy-mode 1))
 
