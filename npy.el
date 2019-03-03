@@ -234,7 +234,7 @@ The value should be 'exploring (default), or 'calling."
                (when full-dir-path
                  (gpc-pool-delete-if #'(lambda (path)
                                          (s-matches-p (concat "^" path) full-dir-path))
-                                     'pipenv-no-virtualenv npy-env)
+                                     'pipenv-non-virtualenv-dirs npy-env)
                  (gpc-pool-pushnew full-dir-path
                                    'pipenv-non-virtualenv-dirs npy-env :test 'equal))
                'no-virtualenv)
