@@ -48,8 +48,7 @@ Place npy.el on a directory in your `load-path`, and add this to your
 Emacs config:
 
 ```el
-(require 'npy)
-(npy-mode 1)
+(npy-mode +1)
 ```
 
 The initial keymap prefix <kbd>C-c '</kbd> is just a suggestion. Feel free to
