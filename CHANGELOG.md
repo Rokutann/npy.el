@@ -2,11 +2,14 @@
 
 ## 0.1.6 (wip)
 
-### Changes
+### New features
 
 * Added `info-lookup-symbol` for Python official documents.
 * Added a feature to switch the activated Pipenv virtualenv automarically.
 * Added the known Pipenv project pool feature to improve performance.
+
+### Changes
+
 * Changed the treatment of `python-shell-virtualenv-root` in `npy.el` from lexical to buffer-local.
 
 ## 0.1.5 (2019-02-25)
@@ -33,13 +36,11 @@
 
 * Changed the mode name from npipenv to npy.
 
-
 ## 0.1.2 (2019-02-02)
 
 ### New features
 
 * Added virtualenv-buffer-dedicated inferior python processes.
-
 
 ## 0.1.1 (2019-01-28)
 
