@@ -2,13 +2,12 @@
 
 ## 0.1.6 (wip)
 
-* Adding info-lookup-symbol for Python documents.
-* Adding a feature to activate Pipenv virtualenvs dynamically.
-* Adding the known virtualenv roots feature to improve the performance.
-
 ### Changes
 
-* Changing the scoping in `npy.el` of `python-shell-virtualenv-root` from lexical to buffer-local (not-automatically).
+* Added `info-lookup-symbol` for Python official documents.
+* Added a feature to switch the activated Pipenv virtualenv automarically.
+* Added the known Pipenv project pool feature to improve performance.
+* Changed the treatment of `python-shell-virtualenv-root` in `npy.el` from lexical to buffer-local.
 
 ## 0.1.5 (2019-02-25)
 
