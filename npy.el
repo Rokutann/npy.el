@@ -86,18 +86,6 @@
   :safe #'file-directory-p
   :group 'npy)
 
-(defcustom npy-command-process-name
-  "npy"
-  "The name of processes for calling the pipenv executable."
-  :type 'string
-  :group 'npy)
-
-(defcustom npy-command-process-buffer-name
-  "*npy*"
-  "The name of process buffers for calling the pipenv executable."
-  :type 'string
-  :group 'npy)
-
 (defcustom npy-python-shell-buffer-name
   "*Pipenv shell*"
   "The name of a python shell buffer which has access to a Pipenv virtualenv."
@@ -141,27 +129,11 @@ This is for the global minor mode version to come."
   :group 'npy
   :type 'boolean)
 
-(defcustom npy-dynamic-mode-line-in-dired-mode
-  t
-  "Update the mode-line dynamically in `dired-mode' if true.
-
-This is for the global minor mode version to come."
-  :group 'npy
-  :type 'boolean)
-
 (defcustom npy-keymap-prefix
   "\C-c'"
   "The npy keymap prefix."
   :group 'npy
   :type 'string)
-
-(defcustom npy-pipenv-project-detection
-  'exploring
-  "The Pipenv project detection method in use.
-
-The value should be 'exploring (default), or 'calling."
-  :group 'npy
-  :type 'symbol)
 
 ;; Vars for Debug
 
@@ -181,19 +153,14 @@ The value should be 'exploring (default), or 'calling."
 ;;; Pipenv project and virtualenv core variables and their access functions.
 (defun npy-pipenv-project-root-fetcher ()
   "Fetch the Pipenv project root path if exists."
-  (if (eq npy-pipenv-project-detection 'exploring)
-      (let* ((buffer-filename (buffer-file-name (current-buffer)))
-             (dirname (cond (buffer-filename (f-dirname buffer-filename))
-                            (default-directory default-directory)
-                            (t nil))))
-        (if dirname
-            (let ((root (npy--find-pipenv-project-root-by-exploring dirname)))
-              (if root root 'no-virtualenv))
-          'no-virtualenv)) ;; THINKME: Using symbols for marking is a good idea?
-    (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --where"))))
-      (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res)) pipenv-res)
-            ((stringp pipenv-res) 'no-virtualenv)
-            (t 'ERR))))) ;; THINKME: Using symbols for marking is a good idea?
+  (let* ((buffer-filename (buffer-file-name (current-buffer)))
+         (dirname (cond (buffer-filename (f-dirname buffer-filename))
+                        (default-directory default-directory)
+                        (t nil))))
+    (if dirname
+        (let ((root (npy--find-pipenv-project-root-by-exploring dirname)))
+          (if root root 'no-virtualenv))
+      'no-virtualenv))) ;; THINKME: Using symbols for marking is a good idea?
 
 (defun npy-pipenv-project-name-fetcher ()
   "Fetch the Pipenv project name if exists."
@@ -441,7 +408,7 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
     (format "%s[v:%s]"
             npy-mode-line-prefix
             (cond ((npy-env-valid-p root) root)
-                  ((eq root 'no-virtualenv) "-")
+                  ((eq root 'no-virtualenv) npy-no-virtualenv-mark)
                   (t "E")))))
 
 (defun npy-update-mode-line ()
@@ -449,19 +416,6 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
   (let ((mode-line (funcall npy-mode-line-function)))
     (setq npy--mode-line mode-line))
   (force-mode-line-update))
-
-;;; Hook and advice functions.
-
-(defun npy-write-file-advice (orig-fun &rest orig-args)
-  "Update two variables when `write-file' (ORIG-FUN with ORIG-ARGS) is called.
-
-The two variables are: `npy--pipenv-project-root' and
-`npy--pipenv-project-name'"
-  (let ((res (apply orig-fun orig-args)))
-    (when (bound-and-true-p npy-mode)
-      (gpc-fetch-all npy-env)
-      (npy-update-mode-line))
-    res))
 
 (defun npy-get-pipenv-project-information (buffer-or-name)
   "Get and return the Pipenv project information in BUFFER-OR-NAME."
@@ -471,6 +425,9 @@ The two variables are: `npy--pipenv-project-root' and
         (list (buffer-name buffer)
               (gpc-pairs npy-env))))))
 
+
+
+;;; Functions to manage Pipenv project information per buffer.
 (defun npy-get-pipenv-proect-information-from-all-buffers ()
   "Get and return the Pipenv project information from all buffers."
   (mapcar 'npy-get-pipenv-project-information (buffer-list)))
@@ -519,6 +476,223 @@ The two variables are: `npy--pipenv-project-root' and
   (npy-deactivate-virtualenv-automatic)
   (npy-cleanup-pipenv-project-information-on-all-buffers)
   (npy-mode 0))
+
+
+;;; Hook and advice functions.
+(defun npy-advise-find-file-noselect (orig-fun &rest orig-args)
+  "Advise `find-file-noselet' :around with ORIG-FUN and ORIG-ARGS."
+  (let ((res (apply orig-fun orig-args)))
+    (when (and res (buffer-file-name res))
+      (with-current-buffer res
+        (gpc-get 'pipenv-project-name npy-env)
+        (gpc-get 'pipenv-project-name-with-hash npy-env)))
+    res))
+
+(defun npy-advise-process-creation (orig-fun &rest orig-args)
+  "Tweak `exec-path' and PATH during a `make-process' call.
+
+Currently, ORIG-FUN should be `make-process', and ORIG-ARGS is
+the arguments when it's called."
+  (let* ((project-name (gpc-get 'pipenv-project-name npy-env)))
+    (if (npy-env-valid-p project-name)
+        (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
+               (venv-bin-path (concat venv-root "/bin/"))
+               ;; (exec-path (cons venv-bin-path exec-path))
+               ;; `make-process' doesn't need this.
+               (orig-path (getenv "PATH")))
+          (setenv "PATH" (concat venv-bin-path ":" orig-path))
+          (unwind-protect
+              (let* ((res (apply orig-fun orig-args))
+                     (paths (s-split ":" (getenv "PATH")))
+                     (new-paths (cl-remove venv-bin-path paths :test 'equal)))
+                (setenv "PATH" (s-join ":" new-paths))
+                res)
+            (setenv "PATH" orig-path)))
+      (let ((res (apply orig-fun orig-args)))
+        res))))
+
+(defun npy-advice-getenv (orig-fun &rest orig-args)
+  "Append the virtualenv path when possible.
+
+ORIG-FUN should be `getenv' and ORIG-ARGS is the arguments when
+it's called."
+  (let ((res (apply orig-fun orig-args)))
+    (when (equal (car orig-args) "PATH")
+      (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
+             (venv-bin-path (when (npy-env-valid-p venv-root)
+                              (concat venv-root "/bin/"))))
+        (when venv-bin-path
+          (let* ((path-list (s-split ":" res))
+                 (clean-paths
+                  (s-join ":" (cl-remove venv-bin-path path-list :test 'equal))))
+            (setq res (concat venv-bin-path ":" clean-paths))))))
+    res))
+
+(defun npy-write-file-advice (orig-fun &rest orig-args)
+  "Update two variables when `write-file' (ORIG-FUN with ORIG-ARGS) is called.
+
+The two variables are: `npy--pipenv-project-root' and
+`npy--pipenv-project-name'"
+  (let ((res (apply orig-fun orig-args)))
+    (when (bound-and-true-p npy-mode)
+      (gpc-fetch-all npy-env)
+      (npy-update-mode-line))
+    res))
+
+(defun npy-python-mode-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
+
+(defun npy-find-file-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
+
+(defun npy-dired-mode-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
+
+(defun npy-compilation-mode-hook-function ()
+  "Set the name, root, and venv of a Pipenv project."
+  (npy-env-initialize :virtualenv t)
+  (when npy-dynamic-mode-line
+    (npy-update-mode-line)))
+
+(cl-defun npy-env-initialize (&key (virtualenv nil))
+  "Initialize `npy-env' and other variables prefixed with 'npy-env-'.
+
+Fetch the virtualenv root path when VIRTUALENV is non-nil.
+
+This function is designed to be called in a major or minor mode
+hook of the buffer you need to initialize npy-env and likes on."
+  (make-local-variable 'python-shell-virtualenv-root)
+  (when (derived-mode-p 'python-mode)
+    (setq npy-child-dedicatable-to (current-buffer)))
+  (gpc-get 'pipenv-project-root npy-env)   ;; FIXME: We need `gpc-get-all'.
+  (gpc-get 'pipenv-project-name npy-env)
+  (gpc-get 'pipenv-project-name-with-hash npy-env)
+  (when virtualenv
+    (let ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env)))
+      (setq python-shell-virtualenv-root
+            (when (npy-env-valid-p venv-root) venv-root)))))
+
+(defun npy-env-valid-p (object)
+  "Return t if OBJECT is the path to a virtualenv root, otherwise nil.
+
+Currently, this function only check if the object is a string."
+  (if (stringp object) t nil))
+
+
+;;; Info lookup support (EXPERIMENTAL)
+;; This extension is based on `pydoc-info' by Jon Waltman.
+(defcustom npy-info-current-symbol-functions
+  '(npy-info-current-symbol-python-el current-word)
+  "Functions to be called to fetch symbol at point.
+Each function is called with no argument and if it returns a
+string, that value is used.  If it returns nil, next function
+is tried.
+Default (fallback to `current-word' when not using python.el):
+   '(`npy-info-current-symbol-python-el' `current-word')."
+  :group 'npy-info)
+
+(defun npy-info-current-symbol-python-el ()
+  "Return current symbol.  Requires python.el."
+  (with-syntax-table python-dotty-syntax-table
+    (current-word)))
+
+(defun npy-info-python-symbol-at-point ()
+  "Return the current Python symbol."
+  (cl-loop for func in npy-info-current-symbol-functions
+           when (funcall func)
+           return it))
+
+;;;###autoload
+(defun npy-info-add-help (files &rest more-specs)
+  "Add help specifications for a list of Info FILES.
+
+The added specifications are tailored for use with Info files
+generated from Sphinx documents.
+
+MORE-SPECS are additional or overriding values passed to
+`info-lookup-add-help'."
+  (info-lookup-reset)
+  (let (doc-spec)
+    (dolist (f files)
+      (push (list (format "(%s)Python Module Index" f)
+                  'npy-info-lookup-transform-entry) doc-spec)
+      (push (list (format "(%s)Index" f)
+                  'npy-info-lookup-transform-entry) doc-spec))
+    (apply 'info-lookup-add-help
+           :mode 'python-mode
+           :parse-rule 'npy-info-python-symbol-at-point
+           :doc-spec doc-spec
+           more-specs)))
+
+;;;###autoload
+(npy-info-add-help '("python372full"))
+
+(defun npy-info-lookup-transform-entry (entry)
+  "Transform a Python index ENTRY to a help item."
+  (let* ((py-re "\\([[:alnum:]_.]+\\)(?)?"))
+    (cond
+     ;; foo.bar --> foo.bar
+     ((string-match (concat "\\`" py-re "\\'") entry)
+      entry)
+     ;; keyword; foo --> foo
+     ;; statement; foo --> foo
+     ((string-match (concat "\\`\\(keyword\\|statement\\);? " py-re) entry)
+      (replace-regexp-in-string " " "." (match-string 2 entry)))
+     ;; foo (built-in ...) --> foo
+     ((string-match (concat "\\`" py-re " (built-in .+)") entry)
+      (replace-regexp-in-string " " "." (match-string 1 entry)))
+     ;; foo.bar (module) --> foo.bar
+     ((string-match (concat "\\`" py-re " (module)") entry)
+      (replace-regexp-in-string " " "." (match-string 1 entry)))
+     ;; baz (in module foo.bar) --> foo.bar.baz
+     ((string-match (concat "\\`" py-re " (in module \\(.+\\))") entry)
+      (replace-regexp-in-string " " "." (concat (match-string 2 entry) " "
+                                                (match-string 1 entry))))
+     ;; Bar (class in foo.bar) --> foo.bar.Bar
+     ((string-match (concat "\\`" py-re " (class in \\(.+\\))") entry)
+      (replace-regexp-in-string " " "." (concat (match-string 2 entry) " "
+                                                (match-string 1 entry))))
+     ;; bar (foo.Foo method) --> foo.Foo.bar
+     ((string-match
+       (concat "\\`" py-re " (\\(.+\\) \\(method\\|attribute\\))") entry)
+      (replace-regexp-in-string " " "." (concat (match-string 2 entry) " "
+                                                (match-string 1 entry))))
+     ;; foo (C ...) --> foo
+     ((string-match (concat "\\`" py-re " (C .*)") entry)
+      (match-string 1 entry))
+     ;; operator; foo --> foo
+     ((string-match "\\`operator; \\(.*\\)" entry)
+      (match-string 1 entry))
+     ;; Python Enhancement Proposals; PEP XXX --> PEP XXX
+     ((string-match "\\`Python Enhancement Proposals; \\(PEP .*\\)" entry)
+      (match-string 1 entry))
+     ;; RFC; RFC XXX --> RFC XXX
+     ((string-match "\\`RFC; \\(RFC .*\\)" entry)
+      (match-string 1 entry))
+     (t
+      entry))))
+
+(defun npy-auto-hide-info-note-references (&rest _args)
+  "Advice to automatically hide 'see' in info files generated by sphinx."
+  ;; Adapted from http://www.sphinx-doc.org/en/stable/faq.html#displaying-links
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char (point-min))
+      (when (re-search-forward
+             "^ *Generated by \\(Sphinx\\|Docutils\\)"
+             (save-excursion (search-forward "\x1f" nil t)) t)
+        (make-local-variable 'Info-hide-note-references)
+        (setq Info-hide-note-references 'hide)))))
 
 
 ;;; User facing functions and its helpers.
@@ -691,117 +865,6 @@ the buffer spawning it."
            npy-dedicated-to
            npy-child-dedicatable-to))
 
-
-;;; Info lookup support (EXPERIMENTAL)
-;; Currently this extension is largely based on `pydoc-info' by Jon Waltman.
-(defcustom npy-info-current-symbol-functions
-  '(npy-info-current-symbol-python-el current-word)
-  "Functions to be called to fetch symbol at point.
-Each function is called with no argument and if it returns a
-string, that value is used.  If it returns nil, next function
-is tried.
-Default (fallback to `current-word' when not using python.el):
-   '(`npy-info-current-symbol-python-el' `current-word')."
-  :group 'npy-info)
-
-(defun npy-info-current-symbol-python-el ()
-  "Return current symbol.  Requires python.el."
-  (with-syntax-table python-dotty-syntax-table
-    (current-word)))
-
-(defun npy-info-python-symbol-at-point ()
-  "Return the current Python symbol."
-  (cl-loop for func in npy-info-current-symbol-functions
-           when (funcall func)
-           return it))
-
-;;;###autoload
-(defun npy-info-add-help (files &rest more-specs)
-  "Add help specifications for a list of Info FILES.
-
-The added specifications are tailored for use with Info files
-generated from Sphinx documents.
-
-MORE-SPECS are additional or overriding values passed to
-`info-lookup-add-help'."
-  (info-lookup-reset)
-  (let (doc-spec)
-    (dolist (f files)
-      (push (list (format "(%s)Python Module Index" f)
-                  'npy-info-lookup-transform-entry) doc-spec)
-      (push (list (format "(%s)Index" f)
-                  'npy-info-lookup-transform-entry) doc-spec))
-    (apply 'info-lookup-add-help
-           :mode 'python-mode
-           :parse-rule 'npy-info-python-symbol-at-point
-           :doc-spec doc-spec
-           more-specs)))
-
-;;;###autoload
-(npy-info-add-help '("python372full"))
-
-(defun npy-info-lookup-transform-entry (entry)
-  "Transform a Python index ENTRY to a help item."
-  (let* ((py-re "\\([[:alnum:]_.]+\\)(?)?"))
-    (cond
-     ;; foo.bar --> foo.bar
-     ((string-match (concat "\\`" py-re "\\'") entry)
-      entry)
-     ;; keyword; foo --> foo
-     ;; statement; foo --> foo
-     ((string-match (concat "\\`\\(keyword\\|statement\\);? " py-re) entry)
-      (replace-regexp-in-string " " "." (match-string 2 entry)))
-     ;; foo (built-in ...) --> foo
-     ((string-match (concat "\\`" py-re " (built-in .+)") entry)
-      (replace-regexp-in-string " " "." (match-string 1 entry)))
-     ;; foo.bar (module) --> foo.bar
-     ((string-match (concat "\\`" py-re " (module)") entry)
-      (replace-regexp-in-string " " "." (match-string 1 entry)))
-     ;; baz (in module foo.bar) --> foo.bar.baz
-     ((string-match (concat "\\`" py-re " (in module \\(.+\\))") entry)
-      (replace-regexp-in-string " " "." (concat (match-string 2 entry) " "
-                                                (match-string 1 entry))))
-     ;; Bar (class in foo.bar) --> foo.bar.Bar
-     ((string-match (concat "\\`" py-re " (class in \\(.+\\))") entry)
-      (replace-regexp-in-string " " "." (concat (match-string 2 entry) " "
-                                                (match-string 1 entry))))
-     ;; bar (foo.Foo method) --> foo.Foo.bar
-     ((string-match
-       (concat "\\`" py-re " (\\(.+\\) \\(method\\|attribute\\))") entry)
-      (replace-regexp-in-string " " "." (concat (match-string 2 entry) " "
-                                                (match-string 1 entry))))
-     ;; foo (C ...) --> foo
-     ((string-match (concat "\\`" py-re " (C .*)") entry)
-      (match-string 1 entry))
-     ;; operator; foo --> foo
-     ((string-match "\\`operator; \\(.*\\)" entry)
-      (match-string 1 entry))
-     ;; Python Enhancement Proposals; PEP XXX --> PEP XXX
-     ((string-match "\\`Python Enhancement Proposals; \\(PEP .*\\)" entry)
-      (match-string 1 entry))
-     ;; RFC; RFC XXX --> RFC XXX
-     ((string-match "\\`RFC; \\(RFC .*\\)" entry)
-      (match-string 1 entry))
-     (t
-      entry))))
-
-;;(defvar-local Info-hide-note-references t)
-
-(defun npy-auto-hide-info-note-references (&rest _args)
-  "Advice to automatically hide 'see' in info files generated by sphinx."
-  ;; Adapted from http://www.sphinx-doc.org/en/stable/faq.html#displaying-links
-  (save-excursion
-    (save-restriction
-      (widen)
-      (goto-char (point-min))
-      (when (re-search-forward
-             "^ *Generated by \\(Sphinx\\|Docutils\\)"
-             (save-excursion (search-forward "\x1f" nil t)) t)
-        (make-local-variable 'Info-hide-note-references)
-        (setq Info-hide-note-references 'hide)))))
-
-
-;;; Virtualenv activate automatic functions.
 ;;;###autoload
 (defun npy-activate-virtualenv-automatic ()
   "Switch the activated virtualenv automatically."
@@ -823,103 +886,6 @@ MORE-SPECS are additional or overriding values passed to
   (advice-remove 'getenv #'npy-advice-getenv)
   ;; (advice-remove 'find-file-noselect 'npy-advise-find-file-noselect)
   )
-
-(defun npy-advise-find-file-noselect (orig-fun &rest orig-args)
-  "Advise `find-file-noselet' :around with ORIG-FUN and ORIG-ARGS."
-  (let ((res (apply orig-fun orig-args)))
-    (when (and res (buffer-file-name res))
-      (with-current-buffer res
-        (gpc-get 'pipenv-project-name npy-env)
-        (gpc-get 'pipenv-project-name-with-hash npy-env)))
-    res))
-
-(defun npy-advise-process-creation (orig-fun &rest orig-args)
-  "Tweak `exec-path' and PATH during a `make-process' call.
-
-Currently, ORIG-FUN should be `make-process', and ORIG-ARGS is
-the arguments when it's called."
-  (let* ((project-name (gpc-get 'pipenv-project-name npy-env)))
-    (if (npy-env-valid-p project-name)
-        (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
-               (venv-bin-path (concat venv-root "/bin/"))
-               ;; (exec-path (cons venv-bin-path exec-path))
-               ;; `make-process' doesn't need this.
-               (orig-path (getenv "PATH")))
-          (setenv "PATH" (concat venv-bin-path ":" orig-path))
-          (unwind-protect
-              (let* ((res (apply orig-fun orig-args))
-                     (paths (s-split ":" (getenv "PATH")))
-                     (new-paths (cl-remove venv-bin-path paths :test 'equal)))
-                (setenv "PATH" (s-join ":" new-paths))
-                res)
-            (setenv "PATH" orig-path)))
-      (let ((res (apply orig-fun orig-args)))
-        res))))
-
-(defun npy-advice-getenv (orig-fun &rest orig-args)
-  "Append the virtualenv path when possible.
-
-ORIG-FUN should be `getenv' and ORIG-ARGS is the arguments when
-it's called."
-  (let ((res (apply orig-fun orig-args)))
-    (when (equal (car orig-args) "PATH")
-      (let* ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env))
-             (venv-bin-path (when (npy-env-valid-p venv-root)
-                              (concat venv-root "/bin/"))))
-        (when venv-bin-path
-          (let* ((path-list (s-split ":" res))
-                 (clean-paths
-                  (s-join ":" (cl-remove venv-bin-path path-list :test 'equal))))
-            (setq res (concat venv-bin-path ":" clean-paths))))))
-    res))
-
-(defun npy-python-mode-hook-function ()
-  "Set the name, root, and venv of a Pipenv project."
-  (npy-env-initialize :virtualenv t)
-  (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
-
-(defun npy-find-file-hook-function ()
-  "Set the name, root, and venv of a Pipenv project."
-  (npy-env-initialize :virtualenv t)
-  (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
-
-(defun npy-dired-mode-hook-function ()
-  "Set the name, root, and venv of a Pipenv project."
-  (npy-env-initialize :virtualenv t)
-  (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
-
-(defun npy-compilation-mode-hook-function ()
-  "Set the name, root, and venv of a Pipenv project."
-  (npy-env-initialize :virtualenv t)
-  (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
-
-(cl-defun npy-env-initialize (&key (virtualenv nil))
-  "Initialize `npy-env' and other variables prefixed with 'npy-env-'.
-
-Fetch the virtualenv root path when VIRTUALENV is non-nil.
-
-This function is designed to be called in a major or minor mode
-hook of the buffer you need to initialize npy-env and likes on."
-  (make-local-variable 'python-shell-virtualenv-root)
-  (when (derived-mode-p 'python-mode)
-    (setq npy-child-dedicatable-to (current-buffer)))
-  (gpc-get 'pipenv-project-root npy-env)   ;; FIXME: We need `gpc-get-all'.
-  (gpc-get 'pipenv-project-name npy-env)
-  (gpc-get 'pipenv-project-name-with-hash npy-env)
-  (when virtualenv
-    (let ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env)))
-      (setq python-shell-virtualenv-root
-            (when (npy-env-valid-p venv-root) venv-root)))))
-
-(defun npy-env-valid-p (object)
-  "Return t if OBJECT is the path to a virtualenv root, otherwise nil.
-
-Currently, this function only check if the object is a string."
-  (if (stringp object) t nil))
 
 
 ;;; Defining the minor mode.
