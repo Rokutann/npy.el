@@ -48,8 +48,8 @@ pair is the content for that file."
   (declare (indent 1))
   `(unwind-protect
        (progn
-         (gpc-pool-clear 'pipenv-virtualenvs npy-env)
-         (gpc-pool-clear 'pipenv-no-virtualenvs npy-env)
+         (gpc-pool-clear 'pipenv-known-projects npy-env)
+         (gpc-pool-clear 'pipenv-non-project-dirs npy-env)
          (npy-helper-create-files npy-test/playground-path
                                   ',filespec)
          ,@body)
