@@ -502,12 +502,14 @@ The two variables are: `npy--pipenv-project-root' and
   (npy-mode 1)
   (mapc 'npy-fetch-all-pipenv-project-info (buffer-list)))
 
+;;;###autoload
 (defun npy-mode-restart ()
   "Enable `npy-mode' and initialize all buffers."
   (interactive)
   (npy-clear-pipenv-proect-info-on-all-buffers)
   (npy-fetch-all-pipenve-project-info-at-all-buffers))
 
+;;;###autoload
 (defun npy-mode-stop ()
   "Disable `npy-mode' and clear all cache data."
   (interactive)
@@ -533,6 +535,7 @@ The two variables are: `npy--pipenv-project-root' and
 ;;        (add-hook 'python-mode-hook 'npy-mode))
 ;;      ))
 
+;;;###autoload
 (defun npy-run-python (&optional dedicated)
   "Run an inferior python process with access to a virtualenv.
 
@@ -576,6 +579,7 @@ DEDICATED inferior python process with access to the virtualenv."
           (gpc-lock npy-env)
           (setq npy-shell-initialized t))))))
 
+;;;###autoload
 (defun npy-display-pipenv-project-root ()
   "Show the path to the Pipenv project root directory."
   (interactive)
@@ -583,12 +587,14 @@ DEDICATED inferior python process with access to the virtualenv."
   (npy-when-valid-do (gpc-get 'pipenv-project-root npy-env)
     (message "Project: %s" (gpc-get 'pipenv-project-root npy-env))))
 
+;;;###autoload
 (defun npy-update-pipenv-project-root ()
   "Update the Pipenv project root directory."
   (interactive)
   (gpc-get 'pipenv-project-root npy-env)
   (npy-display-pipenv-project-root))
 
+;;;###autoload
 (defun npy-display-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
@@ -597,12 +603,14 @@ DEDICATED inferior python process with access to the virtualenv."
       (gpc-get 'pipenv-virtualenv-root npy-env)
     (message "Virtualenv: %s" (gpc-get 'pipenv-virtualenv-root npy-env))))
 
+;;;###autoload
 (defun npy-update-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
   (gpc-fetch 'pipenv-virtualenv-root npy-env)
   (npy-display-pipenv-virtualenv-root))
 
+;;;###autoload
 (defun npy-pipenv-shell ()
   "Spawn a shell-mode shell and invoke a Pipenv shell."
   (interactive)
@@ -614,6 +622,7 @@ DEDICATED inferior python process with access to the virtualenv."
     (comint-send-input)
     (comint-clear-buffer)))
 
+;;;###autoload
 (defun npy-scratch (&optional dedicated)
   "Get a python scratch buffer associated with a virtualenv.
 
@@ -663,27 +672,28 @@ the buffer spawning it."
             ;; We need this to overwrite the value set by `npy-mode'.
             ))))))
 
+;;;###autoload
 (defun npy-show-python-environment ()
-"Show Python environment information."
-(interactive)
-(message (concat "pipenv-project-root: %s\n"
-                 "pipenv-project-name: %s\n"
-                 "pipenv-project-name-with-hash: %s\n"
-                 "pipenv-virtualenv-root: %s\n"
-                 "python-shell-virtualenv-root: %s\n"
-                 "npy-scratch-buffer: %s\n"
-                 "npy-shell-initialized: %s\n"
-                 "npy-dedicated-to: %s\n"
-                 "npy-child-dedicatable-to %s\n")
-         (gpc-val 'pipenv-project-root npy-env)
-         (gpc-val 'pipenv-project-name npy-env)
-         (gpc-val 'pipenv-project-name-with-hash npy-env)
-         (gpc-val 'pipenv-virtualenv-root npy-env)
-         python-shell-virtualenv-root
-         npy-scratch-buffer
-         npy-shell-initialized
-         npy-dedicated-to
-         npy-child-dedicatable-to))
+  "Show Python environment information."
+  (interactive)
+  (message (concat "pipenv-project-root: %s\n"
+                   "pipenv-project-name: %s\n"
+                   "pipenv-project-name-with-hash: %s\n"
+                   "pipenv-virtualenv-root: %s\n"
+                   "python-shell-virtualenv-root: %s\n"
+                   "npy-scratch-buffer: %s\n"
+                   "npy-shell-initialized: %s\n"
+                   "npy-dedicated-to: %s\n"
+                   "npy-child-dedicatable-to %s\n")
+           (gpc-val 'pipenv-project-root npy-env)
+           (gpc-val 'pipenv-project-name npy-env)
+           (gpc-val 'pipenv-project-name-with-hash npy-env)
+           (gpc-val 'pipenv-virtualenv-root npy-env)
+           python-shell-virtualenv-root
+           npy-scratch-buffer
+           npy-shell-initialized
+           npy-dedicated-to
+           npy-child-dedicatable-to))
 
 
 ;;; Info lookup support (EXPERIMENTAL)
@@ -803,6 +813,7 @@ MORE-SPECS are additional or overriding values passed to
 
 
 ;;; Virtualenv activate automatic functions.
+;;;###autoload
 (defun npy-activate-virtualenv-automatic ()
   "Switch the activated virtualenv automatically."
   (interactive)
@@ -815,6 +826,7 @@ MORE-SPECS are additional or overriding values passed to
 ;; mode which requires this advice to work with virtualenvs, we'll
 ;; uncomment this.
 
+;;;###autoload
 (defun npy-deactivate-virtualenv-automatic ()
   "Deactivate virtualenv automatic."
   (interactive)
