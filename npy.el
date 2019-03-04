@@ -290,7 +290,7 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
 ;;; npy-buffer: variables to define npy buffers: npy inferior python buffers and npy scratch buffers.
 
 (defvar npy-buffer-child-dedicatable-to nil
-  "The buffer which a virtualenv-buffer-dedicated buffer to be spawned should dedicate to.")
+  "The buffer which a virtualenv-buffer-dedicated buffer to be spawned should be dedicated to.")
 (make-variable-buffer-local 'npy-buffer-child-dedicatable-to)
 
 (defvar npy-buffer-scratch nil
@@ -406,10 +406,6 @@ if it's longer than 42."
 
 
 ;;; npy-pipenv-information: Functions to manage Pipenv project information on all buffers.
-(defun npy-pipenv-project-information-get-from-all-buffers ()
-  "Get and return the Pipenv project information from all buffers."
-  (mapcar 'npy-pipenv-project-information-get (buffer-list)))
-
 (defun npy-pipenv-project-information-get (buffer-or-name)
   "Get and return the Pipenv project information in BUFFER-OR-NAME."
   (let ((buffer (get-buffer buffer-or-name)))
@@ -418,21 +414,25 @@ if it's longer than 42."
         (list (buffer-name buffer)
               (gpc-pairs npy-env))))))
 
-(defun npy-pipenv-project-information-cleanup-on-all-buffers ()
-  "Clear the Pipenv project information on all buffers."
-  (npy-mode 0)
-  (gpc-pool-init 'pipenv-known-projects npy-env)
-  (gpc-pool-init 'pipenv-non-project-dirs npy-env)
-  (mapc 'npy-pipenv-project-information-clear (buffer-list))
-  (npy-mode 1))
+(defun npy-pipenv-project-information-get-from-all-buffers ()
+  "Get and return the Pipenv project information from all buffers."
+  (mapcar 'npy-pipenv-project-information-get (buffer-list)))
 
-(defun npy-pipenv-project-information-clear (buffer-or-name)
+(defun npy-pipenv-project-information-cleanup (buffer-or-name)
   "Clear the Pipenv project information in BUFFER-OR-NAME."
   (let ((buffer (get-buffer buffer-or-name)))
     (when buffer
       (with-current-buffer buffer
         (setq npy-env nil)
         (kill-local-variable 'python-shell-virtualenv-root)))))
+
+(defun npy-pipenv-project-information-cleanup-on-all-buffers ()
+  "Clear the Pipenv project information on all buffers."
+  (npy-mode 0)
+  (gpc-pool-init 'pipenv-known-projects npy-env)
+  (gpc-pool-init 'pipenv-non-project-dirs npy-env)
+  (mapc 'npy-pipenv-project-information-cleanup (buffer-list))
+  (npy-mode 1))
 
 (defun npy-pipenv-project-information-fetch-all (buffer-or-name)
   "Call `gpc-fetch-all' for `npy-env' on BUFFER-OR-NAME."
