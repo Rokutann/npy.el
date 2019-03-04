@@ -78,7 +78,13 @@
   :group 'python)
 
 
-;;; User customization
+;;; Variables.
+(defcustom npy-keymap-prefix
+  "\C-c'"
+  "The npy keymap prefix."
+  :group 'npy
+  :type 'string)
+
 (defcustom npy-pipenv-executable
   "pipenv"
   "The name of the Pipenv executable."
@@ -102,7 +108,7 @@
   " Py"
   "Mode line lighter prefix for npy.
 
-It's used by `npy-default-mode-line' when using dynamic mode line
+It's used by `npy-mode-line-report' when using dynamic mode line
 lighter and is the only thing shown in the mode line otherwise."
   :group 'npy
   :type 'string)
@@ -114,7 +120,7 @@ lighter and is the only thing shown in the mode line otherwise."
   :type 'string)
 
 (defcustom npy-mode-line-function
-  'npy-default-mode-line
+  'npy-mode-line-report
   "The function to be used to generate project-specific mode-line.
 
 The default function adds the project name to the mode-line."
@@ -129,14 +135,10 @@ This is for the global minor mode version to come."
   :group 'npy
   :type 'boolean)
 
-(defcustom npy-keymap-prefix
-  "\C-c'"
-  "The npy keymap prefix."
-  :group 'npy
-  :type 'string)
+(defvar-local npy-mode-line npy-mode-line-prefix)
 
-;; Vars for Debug
-
+
+;;; npy--debug: a debug facility.
 (defvar npy--debug nil
   "Display debug info when non-nil.")
 
@@ -144,10 +146,6 @@ This is for the global minor mode version to come."
   "Print MSG and ARGS like `message', but only if debug output is enabled."
   (when npy--debug
     (apply #'message msg args)))
-
-;; A variable for the mode line.
-
-(defvar-local npy--mode-line npy-mode-line-prefix)
 
 
 ;;; npy-env: a gpc cache for Python envrionemt information.
@@ -158,7 +156,7 @@ This is for the global minor mode version to come."
                         (default-directory default-directory)
                         (t nil))))
     (if dirname
-        (let ((root (npy--find-pipenv-project-root-by-exploring dirname)))
+        (let ((root (npy-env-find-pipenv-project-root-by-exploring dirname)))
           (if root root 'no-virtualenv))
       'no-virtualenv))) ;; THINKME: Using symbols for marking is a good idea?
 
@@ -178,7 +176,7 @@ This is for the global minor mode version to come."
     ;; FIXME: Need to implement gpc priority to eusure the
     ;; syncronization of cache entities when they refer other entities
     ;; in their fetchers.
-    (cond ((stringp root) (npy--pipenv-get-name-with-hash root))
+    (cond ((stringp root) (npy-env-make-pipenv-proect-name-with-hash root))
           ((eq root 'no-virtualenv) 'no-virtualenv)
           (t 'ERR))))
 
@@ -261,6 +259,31 @@ variables.."
 Currently, this function only checks if the object is a string."
   (if (stringp object) t nil))
 
+(defun npy-env-make-pipenv-proect-name-with-hash (path)
+  "Return the filename of PATH with a Pipenv hash appended."
+  (f-filename (npy-pipenv-compat-virtualenv-name path)))
+
+;;; Functions to find Pipenv information by exploring directory structures.
+(defun npy-env-find-pipenv-project-root-by-exploring (dirname)
+  "Return the Pipenv project root if DIRNAME is under a project, otherwise nil."
+  (npy-env-find-pipenv-project-root-by-exploring-impl (f-split (f-full dirname))))
+
+;; FIXME: Should rewrite this as a non-recursive function.
+(defun npy-env-find-pipenv-project-root-by-exploring-impl (dirname-list)
+  "Return a Pipenv root if DIRNAME-LIST is under a project, otherwise nil.
+
+DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
+  (if (null dirname-list)
+      nil
+    (let ((dirname (apply #'f-join dirname-list)))
+      (if (npy-env-pipenv-root-p dirname)
+          dirname
+        (npy-env-find-pipenv-project-root-by-exploring-impl (nbutlast dirname-list 1))))))
+
+(defun npy-env-pipenv-root-p (dirname)
+  "Return t if DIRNAME is a Pipenv project root, otherwise nil."
+  (f-exists-p (concat (f-full dirname) "/Pipfile")))
+
 
 ;;; npy-buffer: variables to define npy buffers: npy inferior python buffers and npy scratch buffers.
 
@@ -281,7 +304,7 @@ Currently, this function only checks if the object is a string."
 (make-variable-buffer-local 'npy-buffer-dedicated-to)
 
 
-;;; Pipenv compatibility functions.
+;;; npy-pipenv-compat: Pipenv compatibility functions.
 (defun npy-pipenv-compat--sanitize (name)
   "Return sanitized NAME.
 
@@ -362,35 +385,69 @@ if it's longer than 42."
       (npy-pipenv-compat--get-virtualenv-hash name)
     (concat sanitized "-" encoded-hash)))
 
-(defun npy--pipenv-get-name-with-hash (path)
-  "Return the filename of PATH with a Pipenv hash suffix."
-  (f-filename (npy-pipenv-compat-virtualenv-name path)))
+
+;;; npy-mode-line: Functions for the modeline.
+(defun npy-mode-line-report ()
+  "Report the Pipenv project name associated with the buffer in the modeline."
+  (let ((root (gpc-get 'pipenv-project-name npy-env)))
+    (format "%s[v:%s]"
+            npy-mode-line-prefix
+            (cond ((npy-env-valid-p root) root)
+                  ((eq root 'no-virtualenv) npy-no-virtualenv-mark)
+                  (t "E")))))
+
+(defun npy-mode-line-update ()
+  "Update the npy modeline."
+  (let ((mode-line (funcall npy-mode-line-function)))
+    (setq npy-mode-line mode-line))
+  (force-mode-line-update))
 
 
-;;; Functions to find Pipenv information by exploring directory structures.
-(defun npy--find-pipenv-project-root-by-exploring (dirname)
-  "Return the Pipenv project root if DIRNAME is under a project, otherwise nil."
-  (npy--find-pipenv-project-root-by-exploring-impl (f-split (f-full dirname))))
+;;; npy-pipenv-information: Functions to manage Pipenv project information on all buffers.
+(defun npy-pipenv-project-information-get-from-all-buffers ()
+  "Get and return the Pipenv project information from all buffers."
+  (mapcar 'npy-pipenv-project-information-get (buffer-list)))
 
-;; FIXME: Should rewrite this as a non-recursive function.
-(defun npy--find-pipenv-project-root-by-exploring-impl (dirname-list)
-  "Return a Pipenv root if DIRNAME-LIST is under a project, otherwise nil.
+(defun npy-pipenv-project-information-get (buffer-or-name)
+  "Get and return the Pipenv project information in BUFFER-OR-NAME."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (when buffer
+      (with-current-buffer buffer
+        (list (buffer-name buffer)
+              (gpc-pairs npy-env))))))
 
-DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
-  (if (null dirname-list)
-      nil
-    (let ((dirname (apply #'f-join dirname-list)))
-      (if (npy--pipenv-root-p dirname)
-          dirname
-        (npy--find-pipenv-project-root-by-exploring-impl (nbutlast dirname-list 1))))))
+(defun npy-pipenv-project-information-cleanup-on-all-buffers ()
+  "Clear the Pipenv project information on all buffers."
+  (npy-mode 0)
+  (gpc-pool-init 'pipenv-known-projects npy-env)
+  (gpc-pool-init 'pipenv-non-project-dirs npy-env)
+  (mapc 'npy-pipenv-project-information-clear (buffer-list))
+  (npy-mode 1))
 
-(defun npy--pipenv-root-p (dirname)
-  "Return t if DIRNAME is a Pipenv project root, otherwise nil."
-  (f-exists-p (concat (f-full dirname) "/Pipfile")))
+(defun npy-pipenv-project-information-clear (buffer-or-name)
+  "Clear the Pipenv project information in BUFFER-OR-NAME."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (when buffer
+      (with-current-buffer buffer
+        (setq npy-env nil)
+        (kill-local-variable 'python-shell-virtualenv-root)))))
+
+(defun npy-pipenv-project-information-fetch-all (buffer-or-name)
+  "Call `gpc-fetch-all' for `npy-env' on BUFFER-OR-NAME."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (when (and buffer (buffer-live-p buffer)
+               (not (s-matches-p "^ " (buffer-name buffer))))
+      (with-current-buffer buffer
+        (gpc-fetch-all npy-env)))))
+
+(defun npy-pipenve-project-information-fetch-all-on-all-buffers ()
+  "Call `gpc-fetch-all' for `npy-env' on all buffers."
+  (npy-mode 1)
+  (mapc 'npy-pipenv-project-information-fetch-all (buffer-list)))
 
 
-;;; Functions for the integrations with the inferior python mode.
-(defun npy-python-shell-get-buffer-advice (orig-fun &rest orig-args)
+;;; Advice and hook functions.
+(defun npy-advise-python-shell-get-buffer (orig-fun &rest orig-args)
   "Tweak the buffer entity in ORIG-ARGS.
 
 Replace it with the inferior process for the project exists, otherwise
@@ -428,85 +485,6 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                             ;; Maybe raising an error is better.
                             res)))))))))
 
-
-;;; Functions to manage the modeline.
-(defun npy-default-mode-line ()
-  "Report the Pipenv project name associated with the buffer in the modeline."
-  (let ((root (gpc-get 'pipenv-project-name npy-env)))
-    (format "%s[v:%s]"
-            npy-mode-line-prefix
-            (cond ((npy-env-valid-p root) root)
-                  ((eq root 'no-virtualenv) npy-no-virtualenv-mark)
-                  (t "E")))))
-
-(defun npy-update-mode-line ()
-  "Update the npy modeline."
-  (let ((mode-line (funcall npy-mode-line-function)))
-    (setq npy--mode-line mode-line))
-  (force-mode-line-update))
-
-(defun npy-get-pipenv-project-information (buffer-or-name)
-  "Get and return the Pipenv project information in BUFFER-OR-NAME."
-  (let ((buffer (get-buffer buffer-or-name)))
-    (when buffer
-      (with-current-buffer buffer
-        (list (buffer-name buffer)
-              (gpc-pairs npy-env))))))
-
-
-
-;;; Functions to manage Pipenv project information per buffer.
-(defun npy-get-pipenv-proect-information-from-all-buffers ()
-  "Get and return the Pipenv project information from all buffers."
-  (mapcar 'npy-get-pipenv-project-information (buffer-list)))
-
-(defun npy-clear-pipenv-project-information (buffer-or-name)
-  "Clear the Pipenv project information in BUFFER-OR-NAME."
-  (let ((buffer (get-buffer buffer-or-name)))
-    (when buffer
-      (with-current-buffer buffer
-        (setq npy-env nil)
-        (kill-local-variable 'python-shell-virtualenv-root)))))
-
-(defun npy-cleanup-pipenv-project-information-on-all-buffers ()
-  "Clear the Pipenv project information on all buffers."
-  (npy-mode 0)
-  (gpc-pool-init 'pipenv-known-projects npy-env)
-  (gpc-pool-init 'pipenv-non-project-dirs npy-env)
-  (mapc 'npy-clear-pipenv-project-information (buffer-list))
-  (npy-mode 1))
-
-(defun npy-fetch-all-pipenv-project-information (buffer-or-name)
-  "Call `gpc-fetch-all' for `npy-env' on BUFFER-OR-NAME."
-  (let ((buffer (get-buffer buffer-or-name)))
-    (when (and buffer (buffer-live-p buffer)
-               (not (s-matches-p "^ " (buffer-name buffer))))
-      (with-current-buffer buffer
-        (gpc-fetch-all npy-env)))))
-
-(defun npy-fetch-all-pipenve-project-information-on-all-buffers ()
-  "Call `gpc-fetch-all' for `npy-env' on all buffers."
-  (npy-mode 1)
-  (mapc 'npy-fetch-all-pipenv-project-information (buffer-list)))
-
-;;;###autoload
-(defun npy-start-python-development ()
-  "Enable `npy-mode' and initialize all buffers."
-  (interactive)
-  (npy-cleanup-pipenv-project-information-on-all-buffers)
-  (npy-fetch-all-pipenve-project-information-on-all-buffers)
-  (npy-activate-virtualenv-automatic))
-
-;;;###autoload
-(defun npy-finish-pythhon-development ()
-  "Disable `npy-mode' and clear all cache data."
-  (interactive)
-  (npy-deactivate-virtualenv-automatic)
-  (npy-cleanup-pipenv-project-information-on-all-buffers)
-  (npy-mode 0))
-
-
-;;; Hook and advice functions.
 (defun npy-advise-find-file-noselect (orig-fun &rest orig-args)
   "Advise `find-file-noselet' :around with ORIG-FUN and ORIG-ARGS."
   (let ((res (apply orig-fun orig-args)))
@@ -564,35 +542,35 @@ The two variables are: `npy--pipenv-project-root' and
   (let ((res (apply orig-fun orig-args)))
     (when (bound-and-true-p npy-mode)
       (gpc-fetch-all npy-env)
-      (npy-update-mode-line))
+      (npy-mode-line-update))
     res))
 
-(defun npy-python-mode-hook-function ()
+(defun npy-hook-python-mode ()
   "Set the name, root, and venv of a Pipenv project."
   (npy-env-initialize :virtualenv t)
   (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
+    (npy-mode-line-update)))
 
-(defun npy-find-file-hook-function ()
+(defun npy-hook-find-file ()
   "Set the name, root, and venv of a Pipenv project."
   (npy-env-initialize :virtualenv t)
   (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
+    (npy-mode-line-update)))
 
-(defun npy-dired-mode-hook-function ()
+(defun npy-hook-dired-mode ()
   "Set the name, root, and venv of a Pipenv project."
   (npy-env-initialize :virtualenv t)
   (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
+    (npy-mode-line-update)))
 
-(defun npy-compilation-mode-hook-function ()
+(defun npy-hook-compilation-mode ()
   "Set the name, root, and venv of a Pipenv project."
   (npy-env-initialize :virtualenv t)
   (when npy-dynamic-mode-line
-    (npy-update-mode-line)))
+    (npy-mode-line-update)))
 
 
-;;; Info lookup support (EXPERIMENTAL)
+;;; npy-info: Info lookup support (EXPERIMENTAL)
 ;; This extension is based on `pydoc-info' by Jon Waltman.
 (defcustom npy-info-current-symbol-functions
   '(npy-info-current-symbol-python-el current-word)
@@ -685,8 +663,8 @@ MORE-SPECS are additional or overriding values passed to
      (t
       entry))))
 
-(defun npy-auto-hide-info-note-references (&rest _args)
-  "Advice to automatically hide 'see' in info files generated by sphinx."
+(defun npy-info-advise-info-insert-file-contents (&rest _args)
+  "Advise to automatically hide 'see' in info files generated by sphinx."
   ;; Adapted from http://www.sphinx-doc.org/en/stable/faq.html#displaying-links
   (save-excursion
     (save-restriction
@@ -757,7 +735,7 @@ DEDICATED inferior python process with access to the virtualenv."
 (defun npy-display-pipenv-project-root ()
   "Show the path to the Pipenv project root directory."
   (interactive)
-  (npy-update-mode-line)
+  (npy-mode-line-update)
   (npy-when-valid-do (gpc-get 'pipenv-project-root npy-env)
     (message "Project: %s" (gpc-get 'pipenv-project-root npy-env))))
 
@@ -772,7 +750,7 @@ DEDICATED inferior python process with access to the virtualenv."
 (defun npy-display-pipenv-virtualenv-root ()
   "Show the path to the Pipenv virtualenv root directory."
   (interactive)
-  (npy-update-mode-line)
+  (npy-mode-line-update)
   (npy-when-valid-do
       (gpc-get 'pipenv-virtualenv-root npy-env)
     (message "Virtualenv: %s" (gpc-get 'pipenv-virtualenv-root npy-env))))
@@ -836,7 +814,7 @@ the buffer spawning it."
           (setq npy-buffer-scratch t)
           (gpc-copy npy-env spawner-buffer scratch-buf)
           (gpc-lock npy-env)
-          (npy-update-mode-line)
+          (npy-mode-line-update)
           (when content (save-excursion (insert content)))
           (if dedicated
               (progn
@@ -855,9 +833,9 @@ the buffer spawning it."
                    "pipenv-project-name-with-hash: %s\n"
                    "pipenv-virtualenv-root: %s\n"
                    "python-shell-virtualenv-root: %s\n"
-                   "npy-scratch-buffer: %s\n"
-                   "npy-shell-initialized: %s\n"
-                   "npy-dedicated-to: %s\n"
+                   "npy-buffer-scratch-buffer: %s\n"
+                   "npy-buffer-shell-initialized: %s\n"
+                   "npy-buffer-dedicated-to: %s\n"
                    "npy-buffer-child-dedicatable-to %s\n")
            (gpc-val 'pipenv-project-root npy-env)
            (gpc-val 'pipenv-project-name npy-env)
@@ -891,17 +869,31 @@ the buffer spawning it."
   ;; (advice-remove 'find-file-noselect 'npy-advise-find-file-noselect)
   )
 
+;;;###autoload
+(defun npy-start-python-development ()
+  "Enable `npy-mode' and initialize all buffers."
+  (interactive)
+  (npy-pipenv-project-information-cleanup-on-all-buffers)
+  (npy-pipenve-project-information-fetch-all-on-all-buffers)
+  (npy-activate-virtualenv-automatic))
+
+;;;###autoload
+(defun npy-finish-pythhon-development ()
+  "Disable `npy-mode' and clear all cache data."
+  (interactive)
+  (npy-deactivate-virtualenv-automatic)
+  (npy-pipenv-project-information-cleanup-on-all-buffers)
+  (npy-mode 0))
+
 
 ;;; Defining the minor mode.
 (defvar npy-command-map
   (let ((map (make-sparse-keymap)))
-    ;; Shell interaction
     (define-key map "p" #'npy-run-python)
     (define-key map "s" #'npy-pipenv-shell)
-    ;; Some util commands
-    (define-key map "d" #'npy-display-pipenv-project-root)
-    (define-key map "u" #'npy-update-pipenv-project-root)
-    (define-key map "v" #'npy-display-pipenv-virtualenv-root)
+    (define-key map "S" #'npy-scratch)
+    (define-key map "a" #'npy-activate-virtualenv-automatic)
+    (define-key map "d" #'npy-deactivate-virtualenv-automatic)
     map)
   "Keymap for npy mode commands after `npy-keymap-prefix'.")
 (fset 'npy-command-map npy-command-map)
@@ -928,27 +920,27 @@ behave as if called interactively.
 \\{npy-mode-map}"
   :group 'npy
   :require 'npy
-  :lighter npy--mode-line
+  :lighter npy-mode-line
   :keymap npy-mode-map
   :global t
   (cond
    (npy-mode
-    (add-hook 'python-mode-hook 'npy-python-mode-hook-function)
-    (add-hook 'find-file-hook 'npy-find-file-hook-function)
-    (add-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
-    (add-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
-    (advice-add 'python-shell-get-buffer :around #'npy-python-shell-get-buffer-advice)
+    (add-hook 'python-mode-hook 'npy-hook-python-mode)
+    (add-hook 'find-file-hook 'npy-hook-find-file)
+    (add-hook 'dired-mode-hook 'npy-hook-dired-mode)
+    (add-hook 'compilation-mode-hook 'npy-hook-compilation-mode)
+    (advice-add 'python-shell-get-buffer :around #'npy-advise-python-shell-get-buffer)
     (advice-add 'write-file :around #'npy-advise-write-file)
-    (advice-add 'info-insert-file-contents :after #'npy-auto-hide-info-note-references)
+    (advice-add 'info-insert-file-contents :after #'npy-info-advise-info-insert-file-contents)
     (npy-env-initialize :virtualenv t))
    (t
-    (remove-hook 'python-mode-hook 'npy-python-mode-hook-function)
-    (remove-hook 'find-file-hook 'npy-find-file-hook-function)
-    (remove-hook 'dired-mode-hook 'npy-dired-mode-hook-function)
-    (remove-hook 'compilation-mode-hook 'npy-compilation-mode-hook-function)
-    (advice-remove 'python-shell-get-buffer #'npy-python-shell-get-buffer-advice)
+    (remove-hook 'python-mode-hook 'npy-hook-python-mode)
+    (remove-hook 'find-file-hook 'npy-hook-find-file)
+    (remove-hook 'dired-mode-hook 'npy-hook-dired-mode)
+    (remove-hook 'compilation-mode-hook 'npy-hook-compilation-mode)
+    (advice-remove 'python-shell-get-buffer #'npy-advise-python-shell-get-buffer)
     (advice-remove 'write-file #'npy-advise-write-file)
-    (advice-remove 'info-insert-file-contents #'npy-auto-hide-info-note-references))))
+    (advice-remove 'info-insert-file-contents #'npy-info-advise-info-insert-file-contents))))
 
 (provide 'npy)
 
