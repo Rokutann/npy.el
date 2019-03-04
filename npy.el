@@ -199,7 +199,8 @@ This is for the global minor mode version to come."
               ((stringp pipenv-res)
                (when full-dir-path
                  (gpc-pool-delete-if #'(lambda (path)
-                                         (s-matches-p (concat "^" path) full-dir-path))
+                                         (s-matches-p (concat "^" path)
+                                                      full-dir-path))
                                      'pipenv-non-project-dirs npy-env)
                  (gpc-pool-pushnew full-dir-path
                                    'pipenv-non-project-dirs npy-env :test 'equal))
@@ -278,7 +279,8 @@ DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
     (let ((dirname (apply #'f-join dirname-list)))
       (if (npy-env-pipenv-root-p dirname)
           dirname
-        (npy-env-find-pipenv-project-root-by-exploring-impl (nbutlast dirname-list 1))))))
+        (npy-env-find-pipenv-project-root-by-exploring-impl
+         (nbutlast dirname-list 1))))))
 
 (defun npy-env-pipenv-root-p (dirname)
   "Return t if DIRNAME is a Pipenv project root, otherwise nil."
@@ -454,12 +456,13 @@ Replace it with the inferior process for the project exists, otherwise
 leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
   (let ((project-name (gpc-get 'pipenv-project-name npy-env)))
     (cond ((derived-mode-p 'inferior-python-mode) (current-buffer))
-          ((not (npy-env-valid-p project-name)) ; project-name is 'no-virtualenv, 'ERR, or nil.
+          ((not (npy-env-valid-p project-name))
            (let ((res (apply orig-fun orig-args)))
              res))
           (t (let ((associated-file-path
                     (cond (npy-buffer-dedicated-to
-                           ;; means virtualenv-buffer-dedicated inf-py-buf or scratch-buf.
+                           ;; means virtualenv-buffer-dedicated
+                           ;; inf-py-buf or scratch-buf.
                            (buffer-file-name npy-buffer-dedicated-to))
                           (npy-buffer-scratch nil)
                           ;; means virtualenv-dedicated scratch-buf.
@@ -479,7 +482,8 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                                  (f-filename associated-file-path)))
                    (setq venv-buffer-dedicated-running
                          (comint-check-proc venv-buffer-dedicated-process-name)))
-                 (cond (venv-buffer-dedicated-running venv-buffer-dedicated-process-name)
+                 (cond (venv-buffer-dedicated-running
+                        venv-buffer-dedicated-process-name)
                        (venv-dedicated-running venv-dedicated-process-name)
                        (t (let ((res (apply orig-fun orig-args)))
                             ;; Maybe raising an error is better.
