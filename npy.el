@@ -145,6 +145,10 @@ This is for the global minor mode version to come."
   "pip"
   "The mark to show the buffer is under a pip project.")
 
+(defvar npy-pipenv-no-project
+  :no-pipenv-project
+  "The value filled into the Pipenv variables when their buffer isn't in a Pipenv project.")
+
 
 ;;; npy--debug: a debug facility.
 (defvar npy--debug nil
@@ -165,8 +169,8 @@ This is for the global minor mode version to come."
                         (t nil))))
     (if dirname
         (let ((root (npy-env-find-pipenv-project-root-by-exploring dirname)))
-          (if root root 'no-virtualenv))
-      'no-virtualenv)));; THINKME: Using symbols for marking is a good idea?
+          (if root root npy-pipenv-no-project))
+      npy-pipenv-no-project)));; THINKME: Using symbols for marking is a good idea?
 
 (defun npy-env-pip-project-root-fetcher ()
   "Fetch the Pip project root path if exists."
@@ -176,8 +180,8 @@ This is for the global minor mode version to come."
                         (t nil))))
     (if dirname
         (let ((root (npy-env-find-pip-project-root-by-exploring dirname)))
-          (if root root 'no-virtualenv))
-      'no-virtualenv)))
+          (if root root npy-pipenv-no-project))
+      npy-pipenv-no-project)))
 
 (defun npy-env-pipenv-project-name-fetcher ()
   "Fetch the Pipenv project name if exists."
@@ -186,7 +190,7 @@ This is for the global minor mode version to come."
     ;; syncronization of cache entities when they refer other entities
     ;; in their fetchers.
     (cond ((stringp root) (f-filename root))
-          ((eq root 'no-virtualenv) 'no-virtualenv)
+          ((eq root npy-pipenv-no-project) npy-pipenv-no-project)
           (t 'ERR))))
 
 (defun npy-env-pipenv-project-name-with-hash-fetcher ()
@@ -196,7 +200,7 @@ This is for the global minor mode version to come."
     ;; syncronization of cache entities when they refer other entities
     ;; in their fetchers.
     (cond ((stringp root) (npy-env-make-pipenv-proect-name-with-hash root))
-          ((eq root 'no-virtualenv) 'no-virtualenv)
+          ((eq root npy-pipenv-no-project) npy-pipenv-no-project)
           (t 'ERR))))
 
 (defun npy-env-pipenv-virtualenv-root-fetcher ()
@@ -223,7 +227,7 @@ This is for the global minor mode version to come."
                                      'pipenv-non-project-dirs npy-env)
                  (gpc-pool-pushnew full-dir-path
                                    'pipenv-non-project-dirs npy-env :test 'equal))
-               'no-virtualenv)
+               npy-pipenv-no-project)
               (t 'ERR))))))
 
 (cl-defun npy-env-pipenv-pool-check (full-dir-path)
@@ -242,7 +246,7 @@ This is for the global minor mode version to come."
                                                    black-path))
                                   'pipenv-non-project-dirs npy-env)))
         (if maybe-in-black-pool
-            'no-virtualenv
+            npy-pipenv-no-project
           nil)))))
 
 (gpc-init npy-env
@@ -427,7 +431,7 @@ if it's longer than 42."
             npy-mode-line-prefix
             npy-mode-line-pipenv-mark
             (cond ((npy-env-valid-p root) root)
-                  ((eq root 'no-virtualenv) npy-no-virtualenv-mark)
+                  ((eq root npy-pipenv-no-project) npy-no-virtualenv-mark)
                   (t "E")))))
 
 (defun npy-mode-line-update ()
@@ -722,7 +726,7 @@ MORE-SPECS are additional or overriding values passed to
   (declare (indent 1))
   `(cond ((npy-env-valid-p ,var)
           ,it)
-         ((eq ,var 'no-virtualenv)
+         ((eq ,var npy-pipenv-no-project)
           (message "No virtualenv has been created for this project yet!"))
          (t (message "Something wrong has happend in npy."))))
 

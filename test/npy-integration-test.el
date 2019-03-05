@@ -65,14 +65,14 @@
   (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
     (with-file-buffers ("project3/foo.py")
       (with-current-buffer "foo.py"
-        (should (eq (gpc-val 'pipenv-project-root npy-env) 'no-virtualenv))))))
+        (should (eq (gpc-val 'pipenv-project-root npy-env) :no-pipenv-project))))))
 
 (ert-deftest npy-integration-test/open-a-non-project-file/pipenv-virtualenv-root ()
   (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
     (with-file-buffers ("project3/foo.py")
       (with-current-buffer "foo.py"
         (npy-update-pipenv-virtualenv-root)
-        (should (eq (gpc-val 'pipenv-virtualenv-root npy-env) 'no-virtualenv))))))
+        (should (eq (gpc-val 'pipenv-virtualenv-root npy-env) :no-pipenv-project))))))
 
 (ert-deftest npy-integration-test/open-two-files-in-a-project ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1")
