@@ -4,12 +4,14 @@
 
 ### New features
 
+* Adding project detection for pip projects.
 * Added `info-lookup-symbol` for Python official documents.
 * Added a feature to switch the activated Pipenv virtualenv automarically.
 * Added the known Pipenv project pool feature to improve performance.
 
 ### Changes
 
+* Changing the Pipenv project root mark in the mode line from "v:" to "Pipenv:".
 * Changed the treatment of `python-shell-virtualenv-root` in `npy.el` from lexical to buffer-local.
 
 ## 0.1.5 (2019-02-25)

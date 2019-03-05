@@ -73,12 +73,12 @@ When `npy-mode` is turned on, the mode line shows the Pipenv project
 the file the buffer's visiting belongs to or the default directory of
 the buffer belongs to.  The lookup for the associated Pipenv project
 usually happens when you visit the file or the directory.  The mode
-line looks like **Py[v:hello_world]** where 'hello_world' is the name
+line looks like **Py[Pipenv:hello_world]** where 'hello_world' is the name
 of the Pipenv project.
 
 Spawn an virtualenv-dedicated inferior python process by <kbd>C-c '
 p</kbd> or <kbd>M-x</kbd> <kbd>npy-run-python</kbd>. Its buffer name
-should be **\*Python[v:hello_world]\***.
+should be **\*Python[Pipenv:hello_world]\***.
 
 Hereafter npy.el works transparently: you can use all the interaction
 between buffers visiting Python files and the inferior python mode as
@@ -87,8 +87,8 @@ in an ordinary `python-mode` buffer.
 Additionally, you can spawn a buffer-dedicated inferior python mode
 with access to the virtual environment by putting any prefix arguments
 to <kbd>M-x</kbd> <kbd>npy-run-python</kbd> or <kbd>C-u C-c
-'p</kbd>. The mode lines look like **Py[v:hello_world;b:hello.py]**
-and **\*Python[v:hello_world;b:hello.py]\*** respectively.  This type
+'p</kbd>. The mode lines look like **Py[Pipenv:hello_world;b:hello.py]**
+and **\*Python[Pipenv:hello_world;b:hello.py]\*** respectively.  This type
 of inferior python processes only associated with the `python-mode`
 buffer where it was spawned. Other buffers visiting files in the same
 Pipenv project can't send code chunks to the process.

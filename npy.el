@@ -137,6 +137,14 @@ This is for the global minor mode version to come."
 
 (defvar-local npy-mode-line npy-mode-line-prefix)
 
+(defvar npy-mode-line-pipenv-mark
+  "Pipenv"
+  "The mark to show the buffer is under a Pipenv project.")
+
+(defvar npy-mode-line-pip-mark
+  "pip"
+  "The mark to show the buffer is under a pip project.")
+
 
 ;;; npy--debug: a debug facility.
 (defvar npy--debug nil
@@ -415,8 +423,9 @@ if it's longer than 42."
 (defun npy-mode-line-report ()
   "Report the Pipenv project name associated with the buffer in the modeline."
   (let ((root (gpc-get 'pipenv-project-name npy-env)))
-    (format "%s[v:%s]"
+    (format "%s[%s:%s]"
             npy-mode-line-prefix
+            npy-mode-line-pipenv-mark
             (cond ((npy-env-valid-p root) root)
                   ((eq root 'no-virtualenv) npy-no-virtualenv-mark)
                   (t "E")))))
@@ -495,12 +504,15 @@ leave it untouched.  ORIG-FUN should be `python-shell-get-buffer'."
                (let* ((venv-buffer-dedicated-process-name)
                       (venv-buffer-dedicated-running)
                       (venv-dedicated-process-name
-                       (format "*%s[v:%s]*" python-shell-buffer-name project-name))
+                       (format "*%s[%s:%s]*"
+                               python-shell-buffer-name npy-mode-line-pipenv-mark
+                               project-name))
                       (venv-dedicated-running
                        (comint-check-proc venv-dedicated-process-name)))
                  (when associated-file-path
                    (setq venv-buffer-dedicated-process-name
-                         (format "*%s[v:%s;b:%s]*" python-shell-buffer-name
+                         (format "*%s[%s:%s;b:%s]*"
+                                 python-shell-buffer-name npy-mode-line-pipenv-mark
                                  project-name
                                  (f-filename associated-file-path)))
                    (setq venv-buffer-dedicated-running
@@ -738,13 +750,15 @@ DEDICATED inferior python process with access to the virtualenv."
            (python-shell-virtualenv-root venv-root)
            (process-name
             (cond (dedicated
-                   (format "%s[v:%s;b:%s]"
+                   (format "%s[%s:%s;b:%s]"
                            python-shell-buffer-name
+                           npy-mode-line-pipenv-mark
                            project-name
                            (f-filename (buffer-file-name
                                         npy-buffer-child-dedicatable-to))))
-                  (t (format "%s[v:%s]"
+                  (t (format "%s[%s:%s]"
                              python-shell-buffer-name
+                             npy-mode-line-pipenv-mark
                              project-name)))))
       (prog1
           (pop-to-buffer
@@ -821,11 +835,13 @@ the buffer spawning it."
            (maybe-dedicate-to npy-buffer-child-dedicatable-to)
            (mode 'python-mode)
            (name (cond (dedicated
-                        (format "*pyscratch[v:%s;b:%s]*"
+                        (format "*pyscratch[%s:%s;b:%s]*"
+                                npy-mode-line-pipenv-mark
                                 project-name
                                 (f-filename (buffer-file-name
                                              npy-buffer-child-dedicatable-to))))
-                       (t (format "*pyscratch[v:%s]*" project-name))))
+                       (t (format "*pyscratch[%s:%s]*"
+                                  npy-mode-line-pipenv-mark project-name))))
            (scratch-buf (get-buffer name)))
       (if (bufferp scratch-buf)
           (pop-to-buffer scratch-buf)

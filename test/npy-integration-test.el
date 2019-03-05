@@ -114,7 +114,7 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python)
       (npy-helper-wait)
-      (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
+      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
         (should-not (eq  python-inf-buf nil))
         (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
 
@@ -125,7 +125,7 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python t)
       (npy-helper-wait)
-      (let ((python-inf-buf (get-buffer "*Python[v:project1;b:buz.py]*")))
+      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1;b:buz.py]*")))
         (should-not (eq  python-inf-buf nil))
         (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
 
@@ -136,7 +136,7 @@
       (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
       (npy-run-python)
       (npy-helper-wait)
-      (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
+      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
         (should-not (eq  python-inf-buf nil))
         (should-response-match python-inf-buf
           "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
@@ -151,8 +151,8 @@
       (with-current-buffer "foo.py"
         (npy-run-python))
       (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[v:project2]*")))
+      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
         (should-response-match python-inf-buf-1
           "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
         (should-response-match python-inf-buf-2
@@ -165,7 +165,7 @@
       (with-current-buffer  "buz.py"
         (npy-run-python)
         (npy-helper-wait))
-      (let ((python-inf-buf (get-buffer "*Python[v:project1]*")))
+      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
         (with-current-buffer "buz.py"
           (python-shell-send-buffer))
         (should-response-match python-inf-buf
@@ -181,8 +181,8 @@
       (with-current-buffer "foo.py"
         (npy-run-python))
       (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[v:project2]*")))
+      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
         (with-current-buffer "buz.py"
           (python-shell-send-buffer))
         (with-current-buffer "foo.py"
@@ -203,8 +203,8 @@
       (with-current-buffer "foo.py"
         (npy-run-python))
       (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[v:project2]*")))
+      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
         (with-current-buffer "foo.py"
           (python-shell-send-buffer))
         (should-response-match python-inf-buf-2
@@ -224,7 +224,7 @@
       (with-current-buffer "foo.py"
         (run-python))
       (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
+      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
             (python-inf-buf-2 (get-buffer "*Python*")))
         (with-current-buffer "buz.py"
           (python-shell-send-buffer))
@@ -245,8 +245,8 @@
       (with-current-buffer "foo.py"
         (npy-run-python t))
       (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[v:project1;b:foo.py]*")))
+      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project1;b:foo.py]*")))
         (with-current-buffer "buz.py"
           (python-shell-send-buffer))
         (with-current-buffer "foo.py"
@@ -266,8 +266,8 @@
       (with-current-buffer "foo.py"
         (npy-run-python t))
       (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[v:project1;b:buz.py]*"))
-            (python-inf-buf-2 (get-buffer "*Python[v:project1;b:foo.py]*")))
+      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1;b:buz.py]*"))
+            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project1;b:foo.py]*")))
         (with-current-buffer "buz.py"
           (python-shell-send-buffer))
         (with-current-buffer "foo.py"
