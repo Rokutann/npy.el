@@ -179,9 +179,9 @@ This is for the global minor mode version to come."
     (if maybe-in-pool
         maybe-in-pool
       (if full-dir-path
-          (let ((root (npy-env-find-pipenv-project-root-by-exploring full-dir-path)))
-            (if root
-                root
+          (let ((maybe-root (npy-env-find-pipenv-project-root-by-exploring full-dir-path)))
+            (if maybe-root
+                maybe-root
               (gpc-pool-delete-if #'(lambda (path)
                                       (s-matches-p (concat "^" path)
                                                    full-dir-path))
@@ -192,15 +192,33 @@ This is for the global minor mode version to come."
         npy-pipenv-no-project))))
 
 (defun npy-env-pip-project-root-fetcher ()
-  "Fetch the Pip project root path if exists."
+  "Fetch the pip project root path if exists."
   (let* ((buffer-filename (buffer-file-name (current-buffer)))
-         (dirname (cond (buffer-filename (f-dirname buffer-filename))
-                        (default-directory default-directory)
-                        (t nil))))
-    (if dirname
-        (let ((root (npy-env-find-pip-project-root-by-exploring dirname)))
-          (if root root npy-pipenv-no-project))
-      npy-pipenv-no-project)))
+         (full-dir-path (cond (buffer-filename (f-dirname buffer-filename))
+                              (default-directory (f-full default-directory))
+                              (t nil)))
+         (maybe-in-pool (when full-dir-path
+                          (let ((check-result (npy-env-pip-pool-check full-dir-path)))
+                            (when (and (not (null check-result))
+                                       (consp check-result))
+                              (car check-result))))))
+    (if maybe-in-pool
+        maybe-in-pool
+      (if full-dir-path
+          (let ((maybe-root (npy-env-find-pip-project-root-by-exploring full-dir-path)))
+            (if maybe-root
+                (progn
+                  (gpc-pool-pushnew (cons maybe-root nil) 'pip-known-projects
+                                    npy-env :test 'equal)
+                  maybe-root)
+              (gpc-pool-delete-if #'(lambda (path)
+                                      (s-matches-p (concat "^" path)
+                                                   full-dir-path))
+                                  'pip-non-project-dirs npy-env)
+              (gpc-pool-pushnew full-dir-path
+                                'pip-non-project-dirs npy-env :test 'equal)
+              npy-pip-no-project))
+        npy-pip-no-project))))
 
 (defun npy-env-pipenv-project-name-fetcher ()
   "Fetch the Pipenv project name if exists."
@@ -269,6 +287,23 @@ This is for the global minor mode version to come."
                                   'pipenv-non-project-dirs npy-env)))
         (if maybe-in-black-pool npy-pipenv-no-project nil)))))
 
+(cl-defun npy-env-pip-pool-check (full-dir-path)
+  "Check if PATH is under a pip project."
+  (let ((maybe-in-white-pool
+         (gpc-pool-member-if #'(lambda (white-pair)
+                                 (s-matches-p (concat "^" (car white-pair))
+                                              full-dir-path))
+                             'pip-known-projects npy-env)))
+    (if maybe-in-white-pool
+        (progn
+          (car maybe-in-white-pool))
+      (let* ((maybe-in-black-pool
+              (gpc-pool-member-if #'(lambda (black-path)
+                                      (s-matches-p (concat "^" full-dir-path)
+                                                   black-path))
+                                  'pip-non-project-dirs npy-env)))
+        (if maybe-in-black-pool npy-pip-no-project nil)))))
+
 (gpc-init npy-env
   '((pipenv-project-root nil npy-env-pipenv-project-root-fetcher)
     (pipenv-project-name nil npy-env-pipenv-project-name-fetcher)
@@ -277,6 +312,8 @@ This is for the global minor mode version to come."
     (pip-project-root nil npy-env-pip-project-root-fetcher)))
 (gpc-pool-init 'pipenv-known-projects npy-env)
 (gpc-pool-init 'pipenv-non-project-dirs npy-env)
+(gpc-pool-init 'pip-known-projects npy-env)
+(gpc-pool-init 'pip-non-project-dirs npy-env)
 (gpc-make-variable-buffer-local npy-env)
 
 (cl-defun npy-env-initialize (&key (virtualenv nil))
