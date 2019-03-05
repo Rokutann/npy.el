@@ -5,7 +5,7 @@
 ;; Author: Cyriakus "Mukuge" Hill <cyriakus.h@gmail.com>
 ;; Keywords: tools, processes
 ;; URL: https://github.com/mukuge/npy-mode.el/
-;; Package-Version: 0.1.5
+;; Package-Version: 0.1.5.d
 ;; Package-Requires: ((emacs "26.1")(f "0.20.0")(s "1.7.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -158,7 +158,18 @@ This is for the global minor mode version to come."
     (if dirname
         (let ((root (npy-env-find-pipenv-project-root-by-exploring dirname)))
           (if root root 'no-virtualenv))
-      'no-virtualenv))) ;; THINKME: Using symbols for marking is a good idea?
+      'no-virtualenv)));; THINKME: Using symbols for marking is a good idea?
+
+(defun npy-env-pip-project-root-fetcher ()
+  "Fetch the Pip project root path if exists."
+  (let* ((buffer-filename (buffer-file-name (current-buffer)))
+         (dirname (cond (buffer-filename (f-dirname buffer-filename))
+                        (default-directory default-directory)
+                        (t nil))))
+    (if dirname
+        (let ((root (npy-env-find-pip-project-root-by-exploring dirname)))
+          (if root root 'no-virtualenv))
+      'no-virtualenv)))
 
 (defun npy-env-pipenv-project-name-fetcher ()
   "Fetch the Pipenv project name if exists."
@@ -230,7 +241,8 @@ This is for the global minor mode version to come."
   '((pipenv-project-root nil npy-env-pipenv-project-root-fetcher)
     (pipenv-project-name nil npy-env-pipenv-project-name-fetcher)
     (pipenv-project-name-with-hash nil npy-env-pipenv-project-name-with-hash-fetcher)
-    (pipenv-virtualenv-root nil npy-env-pipenv-virtualenv-root-fetcher)))
+    (pipenv-virtualenv-root nil npy-env-pipenv-virtualenv-root-fetcher)
+    (pip-project-root nil npy-env-pip-project-root-fetcher)))
 (gpc-pool-init 'pipenv-known-projects npy-env)
 (gpc-pool-init 'pipenv-non-project-dirs npy-env)
 (gpc-make-variable-buffer-local npy-env)
@@ -246,9 +258,10 @@ variables.."
   (make-local-variable 'python-shell-virtualenv-root)
   (when (derived-mode-p 'python-mode)
     (setq npy-buffer-child-dedicatable-to (current-buffer)))
-  (gpc-get 'pipenv-project-root npy-env)   ;; FIXME: We need `gpc-get-all'.
+  (gpc-get 'pipenv-project-root npy-env)   ;; FIXME: We may need `gpc-get-all'.
   (gpc-get 'pipenv-project-name npy-env)
   (gpc-get 'pipenv-project-name-with-hash npy-env)
+  (gpc-get 'pip-project-root npy-env)
   (when virtualenv
     (let ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env)))
       (setq python-shell-virtualenv-root
@@ -264,27 +277,37 @@ Currently, this function only checks if the object is a string."
   "Return the filename of PATH with a Pipenv hash appended."
   (f-filename (npy-pipenv-compat-virtualenv-name path)))
 
-;;; Functions to find Pipenv information by exploring directory structures.
 (defun npy-env-find-pipenv-project-root-by-exploring (dirname)
   "Return the Pipenv project root if DIRNAME is under a project, otherwise nil."
-  (npy-env-find-pipenv-project-root-by-exploring-impl (f-split (f-full dirname))))
+  (npy-env-find-project-root-by-exploring (f-split (f-full dirname)) #'npy-env-pipenv-project-root-p))
+
+(defun npy-env-find-pip-project-root-by-exploring (dirname)
+  "Return the Pip project root if DIRNAME is under a project, otherwise nil."
+  (npy-env-find-project-root-by-exploring (f-split (f-full dirname)) #'npy-env-pip-project-root-p))
 
 ;; FIXME: Should rewrite this as a non-recursive function.
-(defun npy-env-find-pipenv-project-root-by-exploring-impl (dirname-list)
-  "Return a Pipenv root if DIRNAME-LIST is under a project, otherwise nil.
+(defun npy-env-find-project-root-by-exploring (dirname-list predicate)
+  "Return a project root path if found, otherwise nil.
 
-DIRNAME-LIST should be the f-split style: e.g. (\"/\" \"usr\" \"local\")."
+DIRNAME-LIST should be in the f-split style: e.g. (\"/\" \"usr\"
+\"local\"). This function checks if the dir expressed by
+DIRNAME-LIST is a project root by using PREDICATE, which takes a
+full path to the dir as its argument."
   (if (null dirname-list)
       nil
     (let ((dirname (apply #'f-join dirname-list)))
-      (if (npy-env-pipenv-root-p dirname)
+      (if (funcall predicate dirname)
           dirname
-        (npy-env-find-pipenv-project-root-by-exploring-impl
-         (nbutlast dirname-list 1))))))
+        (npy-env-find-project-root-by-exploring
+         (nbutlast dirname-list 1) predicate)))))
 
-(defun npy-env-pipenv-root-p (dirname)
+(defun npy-env-pipenv-project-root-p (dirname)
   "Return t if DIRNAME is a Pipenv project root, otherwise nil."
   (f-exists-p (concat (f-full dirname) "/Pipfile")))
+
+(defun npy-env-pip-project-root-p (dirname)
+  "Return t if DIRNAME is a Pipenv project root, otherwise nil."
+  (f-exists-p (concat (f-full dirname) "/requirements.txt")))
 
 
 ;;; npy-buffer: variables to define npy buffers: npy inferior python buffers and npy scratch buffers.
@@ -836,15 +859,17 @@ the buffer spawning it."
                    "pipenv-project-name: %s\n"
                    "pipenv-project-name-with-hash: %s\n"
                    "pipenv-virtualenv-root: %s\n"
+                   "pip-project-root: %s\n"
                    "python-shell-virtualenv-root: %s\n"
                    "npy-buffer-scratch-buffer: %s\n"
                    "npy-buffer-shell-initialized: %s\n"
                    "npy-buffer-dedicated-to: %s\n"
-                   "npy-buffer-child-dedicatable-to %s\n")
+                   "npy-buffer-child-dedicatable-to %s")
            (gpc-val 'pipenv-project-root npy-env)
            (gpc-val 'pipenv-project-name npy-env)
            (gpc-val 'pipenv-project-name-with-hash npy-env)
            (gpc-val 'pipenv-virtualenv-root npy-env)
+           (gpc-val 'pip-project-root npy-env)
            python-shell-virtualenv-root
            npy-buffer-scratch
            npy-buffer-shell-initialized
