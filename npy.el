@@ -149,6 +149,10 @@ This is for the global minor mode version to come."
   :no-pipenv-project
   "The value filled into the Pipenv variables when their buffer isn't in a Pipenv project.")
 
+(defvar npy-pip-no-project
+  :no-pip-project
+  "The value filled into the pip variables when their buffer isn't in a pip project.")
+
 
 ;;; npy--debug: a debug facility.
 (defvar npy--debug nil
@@ -164,13 +168,28 @@ This is for the global minor mode version to come."
 (defun npy-env-pipenv-project-root-fetcher ()
   "Fetch the Pipenv project root path if exists."
   (let* ((buffer-filename (buffer-file-name (current-buffer)))
-         (dirname (cond (buffer-filename (f-dirname buffer-filename))
-                        (default-directory default-directory)
-                        (t nil))))
-    (if dirname
-        (let ((root (npy-env-find-pipenv-project-root-by-exploring dirname)))
-          (if root root npy-pipenv-no-project))
-      npy-pipenv-no-project)));; THINKME: Using symbols for marking is a good idea?
+         (full-dir-path (cond (buffer-filename (f-dirname buffer-filename))
+                              (default-directory (f-full default-directory))
+                              (t nil)))
+         (maybe-in-pool (when full-dir-path
+                          (let ((check-result (npy-env-pipenv-pool-check full-dir-path)))
+                            (when (and (not (null check-result))
+                                       (consp check-result))
+                              (car check-result))))))
+    (if maybe-in-pool
+        maybe-in-pool
+      (if full-dir-path
+          (let ((root (npy-env-find-pipenv-project-root-by-exploring full-dir-path)))
+            (if root
+                root
+              (gpc-pool-delete-if #'(lambda (path)
+                                      (s-matches-p (concat "^" path)
+                                                   full-dir-path))
+                                  'pipenv-non-project-dirs npy-env)
+              (gpc-pool-pushnew full-dir-path
+                                'pipenv-non-project-dirs npy-env :test 'equal)
+              npy-pipenv-no-project))
+        npy-pipenv-no-project))))
 
 (defun npy-env-pip-project-root-fetcher ()
   "Fetch the Pip project root path if exists."
@@ -209,8 +228,11 @@ This is for the global minor mode version to come."
           (cond ((buffer-file-name) (f-dirname (f-full (buffer-file-name))))
                 (default-directory (f-full default-directory))
                 (t nil)))
-         (maybe-in-pool (if full-dir-path
-                            (npy-env-pipenv-pool-check full-dir-path))))
+         (maybe-in-pool (when full-dir-path
+                          (let ((check-result (npy-env-pipenv-pool-check full-dir-path)))
+                            (when (and (not (null check-result))
+                                       (consp check-result))
+                              (cdr check-result))))))
     (if maybe-in-pool
         maybe-in-pool
       (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
@@ -239,15 +261,13 @@ This is for the global minor mode version to come."
                              'pipenv-known-projects npy-env)))
     (if maybe-in-white-pool
         (progn
-          (cdar maybe-in-white-pool))
+          (car maybe-in-white-pool))
       (let* ((maybe-in-black-pool
               (gpc-pool-member-if #'(lambda (black-path)
                                       (s-matches-p (concat "^" full-dir-path)
                                                    black-path))
                                   'pipenv-non-project-dirs npy-env)))
-        (if maybe-in-black-pool
-            npy-pipenv-no-project
-          nil)))))
+        (if maybe-in-black-pool npy-pipenv-no-project nil)))))
 
 (gpc-init npy-env
   '((pipenv-project-root nil npy-env-pipenv-project-root-fetcher)
