@@ -181,7 +181,9 @@ This is for the global minor mode version to come."
       (if full-dir-path
           (let ((maybe-root (npy-env-find-pipenv-project-root-by-exploring full-dir-path)))
             (if maybe-root
-                maybe-root
+                (progn
+                  (gpc-pool-pushnew (cons maybe-root nil) 'pipenv-known-projects npy-env)
+                  maybe-root)
               (gpc-pool-delete-if #'(lambda (path)
                                       (s-matches-p (concat "^" path)
                                                    full-dir-path))
@@ -246,20 +248,45 @@ This is for the global minor mode version to come."
           (cond ((buffer-file-name) (f-dirname (f-full (buffer-file-name))))
                 (default-directory (f-full default-directory))
                 (t nil)))
-         (maybe-in-pool (when full-dir-path
-                          (let ((check-result (npy-env-pipenv-pool-check full-dir-path)))
-                            (when (and (not (null check-result))
-                                       (consp check-result))
-                              (cdr check-result))))))
+         (maybe-in-pool
+          (when full-dir-path
+            (let ((check-result (npy-env-pipenv-pool-check full-dir-path)))
+              (when (and (not (null check-result))
+                         (consp check-result))
+                (let ((project-root (car check-result))
+                      (venv-root (cdr check-result)))
+                  (if (null venv-root)
+                      (let ((maybe-venv-root (s-chomp (shell-command-to-string "pipenv --venv"))))
+                        (cond ((and (stringp maybe-venv-root) (f-directory-p maybe-venv-root))
+                               (gpc-pool-delete-if #'(lambda (pair)
+                                                       (equal (car pair) project-root))
+                                                   'pipenv-known-projects npy-env)
+                               (gpc-pool-pushnew
+                                (cons project-root maybe-venv-root)
+                                'pipenv-known-projects npy-env :test 'equal)
+                               venv-root)
+                              ((stringp maybe-venv-root)
+                               (gpc-pool-delete-if #'(lambda (pair)
+                                                       (equal (car pair) project-root))
+                                                   'pipenv-known-projects npy-env)
+                               (gpc-pool-delete-if #'(lambda (path)
+                                                       (s-matches-p (concat "^" path)
+                                                                    full-dir-path))
+                                                   'pipenv-non-project-dirs npy-env)
+                               (gpc-pool-pushnew full-dir-path
+                                                 'pipenv-non-project-dirs npy-env :test 'equal)
+                               npy-pipenv-no-project)
+                              (t 'ERR)))
+                    venv-root)))))))
     (if maybe-in-pool
         maybe-in-pool
-      (let ((pipenv-res (s-chomp (shell-command-to-string "pipenv --venv"))))
-        (cond ((and (stringp pipenv-res) (f-directory-p pipenv-res))
+      (let ((maybe-venv-root (s-chomp (shell-command-to-string "pipenv --venv"))))
+        (cond ((and (stringp maybe-venv-root) (f-directory-p maybe-venv-root))
                (gpc-pool-pushnew
-                (cons (gpc-get 'pipenv-project-root npy-env) pipenv-res)
+                (cons (gpc-get 'pipenv-project-root npy-env) maybe-venv-root)
                 'pipenv-known-projects npy-env :test 'equal)
-               pipenv-res)
-              ((stringp pipenv-res)
+               maybe-venv-root)
+              ((stringp maybe-venv-root)
                (when full-dir-path
                  (gpc-pool-delete-if #'(lambda (path)
                                          (s-matches-p (concat "^" path)
