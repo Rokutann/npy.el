@@ -1,4 +1,4 @@
-;;; npy-test.el --- npy: Tests.                      -*- lexical-binding: t; -*-
+;;; npy-integration-additional-test.el --- npy: Tests.                      -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Cyriakus "Mukuge" Hill
 
@@ -38,9 +38,6 @@
 
 ;; For executing tests in Emacs manually.
 ;; (setq npy-test/playground-path "/tmp/npy-playground/")
-
-(setq npy-test/venv-root-for-project1 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project1/ && pipenv --venv)")))
-(setq npy-test/venv-root-for-project2 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project2/ && pipenv --venv)")))
 
 (ert-deftest npy-integration-test/open-a-file-in-a-project/pipenv-project-root ()
   (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -172,49 +169,6 @@
           "print(VAR)\n" "from buz.py")
         (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
 
-(ert-deftest npy-integration-test/spawn-two-inferior-python-buffers/send-two-strings-each-in-a-different-venv ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
-                             ("project2/foo.py" . "VAR = \"from foo.py\""))
-    (with-file-buffers ("project1/buz.py" "project2/foo.py")
-      (with-current-buffer "buz.py"
-        (npy-run-python))
-      (with-current-buffer "foo.py"
-        (npy-run-python))
-      (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
-        (with-current-buffer "buz.py"
-          (python-shell-send-buffer))
-        (with-current-buffer "foo.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf-1
-          "print(VAR)\n" "from buz.py")
-        (should-response-match python-inf-buf-2
-          "print(VAR)\n" "from foo.py")
-        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
-
-(ert-deftest npy-integration-test/spawn-three-inferior-python-buffers/send-strings-in-a-venv ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
-                             ("project2/foo.py" . "VAR = \"from foo.py\"")
-                             ("project2/bar.py" . "VAR2 = \"from bar.py\""))
-    (with-file-buffers ("project1/buz.py" "project2/foo.py" "project2/bar.py")
-      (with-current-buffer "buz.py"
-        (npy-run-python))
-      (with-current-buffer "foo.py"
-        (npy-run-python))
-      (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
-        (with-current-buffer "foo.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf-2
-          "print(VAR)\n" "from foo.py")
-        (with-current-buffer "bar.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf-2
-          "print(VAR2)\n" "from bar.py")
-        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
-
 (ert-deftest npy-integration-test/spawn-a-normal-inf-buffer-and-a-venv-buffer/simple ()
   (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
                              ("project3/foo.py" . "VAR = \"from foo.py\""))
@@ -257,26 +211,5 @@
           "print(VAR)\n" "from foo.py")
         (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
 
-(ert-deftest npy-integration-test/spawn-two-venv-dedicated-inf-buffers ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
-                             ("project1/foo.py" . "VAR = \"from foo.py\""))
-    (with-file-buffers ("project1/buz.py" "project1/foo.py")
-      (with-current-buffer "buz.py"
-        (npy-run-python t))
-      (with-current-buffer "foo.py"
-        (npy-run-python t))
-      (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1;b:buz.py]*"))
-            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project1;b:foo.py]*")))
-        (with-current-buffer "buz.py"
-          (python-shell-send-buffer))
-        (with-current-buffer "foo.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf-1
-          "print(VAR)\n" "from buz.py")
-        (should-response-match python-inf-buf-2
-          "print(VAR)\n" "from foo.py")
-        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
-
-(provide 'npy-test)
-;;; npy-test.el ends here
+(provide 'npy-integration-additional-test)
+;;; npy-integration-additional-test.el ends here

@@ -129,7 +129,25 @@ pair is the content for that file."
        (npy-helper-wait)
        (should npy-test/match-flag))))
 
+(defmacro let-to-kill (buffer-bindings &rest body)
+  "Ensure kill BUFFER-BINDINGS after executing BODY."
+  (declare (indent 1))
+  `(let ,buffer-bindings
+     (unwind-protect
+         ,@body
+       ,@(mapcar '(lambda (binding) `(npy-helper-kill-python-buffer ,(car binding))) buffer-bindings))))
 
+(defun npy-helper-kill-python-buffer (buffer)
+  "Kill a `python-mode' or `inferior-python-mode' BUFFER."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (if (derived-mode-p 'inferior-python-mode)
+          (npy-helper-kill-python-inferior-buffers buffer)
+        (kill-buffer)))))
+
+(defun npy-helper-write (string buffer)
+  "Write STRING out to BUFFER."
+  (mapc #'(lambda (char) (write-char char buffer)) string))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here

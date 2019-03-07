@@ -60,5 +60,8 @@
 (npy-mode 1)
 ;;(npy-initialize)
 
+(setq npy-test/venv-root-for-project1 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project1/ && pipenv --venv)")))
+(setq npy-test/venv-root-for-project2 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project2/ && pipenv --venv)")))
+
 (provide 'npy-init)
 ;;; npy-init.el ends here

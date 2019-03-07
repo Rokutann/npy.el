@@ -16,6 +16,9 @@ check-travis: playground
 ert-all:
 	${CASK} exec ert-runner
 
+essence:
+	${CASK} exec ert-runner test/npy-integration-essential-test.el test/npy-scratch-essential-test.el
+
 integration:
 	${CASK} exec ert-runner test/npy-integration-test.el
 
