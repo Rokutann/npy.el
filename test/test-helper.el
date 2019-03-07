@@ -43,6 +43,21 @@ pair is the content for that file."
         (make-directory dirname t))
       (write-region content nil fullname))))
 
+(defun npy-helper-delete-files (basedir filespec)
+  "In BASEDIR, delete all files in FILESPEC."
+  (dolist (spec filespec)
+    (let* ((filename (if (stringp spec)
+                         spec
+                       (car spec)))
+           (content (if (stringp spec)
+                        ""
+                      (cdr spec)))
+           (fullname (format "%s/%s" basedir filename))
+           (dirname (file-name-directory fullname)))
+      (when (and (file-directory-p dirname)
+                 (file-exists-p fullname))
+        (delete-file fullname)))))
+
 (defmacro with-files-in-playground (filespec &rest body)
   "Execute BODY in the playground specified by FILESPEC."
   (declare (indent 1))
@@ -50,11 +65,12 @@ pair is the content for that file."
        (progn
          (gpc-pool-clear 'pipenv-known-projects npy-env)
          (gpc-pool-clear 'pipenv-non-project-dirs npy-env)
+         (gpc-pool-clear 'pip-known-projects npy-env)
+         (gpc-pool-clear 'pip-non-project-dirs npy-env)
          (npy-helper-create-files npy-test/playground-path
                                   ',filespec)
          ,@body)
-     ;;(delete-directory npy-test/playground-path t)
-     ))
+     (npy-helper-delete-files npy-test/playground-path ',filespec)))
 
 (defmacro with-file-buffers (files &rest body)
   "Execute BODY after creating buffers visiting FILES."

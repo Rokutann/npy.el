@@ -62,19 +62,21 @@
 
 (ert-deftest npy-integration-test/spawn-three-inferior-python-buffers/send-strings-in-a-venv ()
   (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
-
+                             ("project1/foo.py" . "VAR = \"from foo.py\"")
                              ("project2/bar.py" . "VAR2 = \"from bar.py\""))
-    (with-file-buffers ("project1/buz.py" "project2/foo.py" "project2/bar.py")
+    (with-file-buffers ("project1/buz.py" "project1/foo.py" "project2/bar.py")
       (with-current-buffer "buz.py"
         (npy-run-python))
       (with-current-buffer "foo.py"
+        (npy-run-python))
+      (with-current-buffer "bar.py"
         (npy-run-python))
       (npy-helper-wait)
       (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
             (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
         (with-current-buffer "foo.py"
           (python-shell-send-buffer))
-        (should-response-match python-inf-buf-2
+        (should-response-match python-inf-buf-1
           "print(VAR)\n" "from foo.py")
         (with-current-buffer "bar.py"
           (python-shell-send-buffer))
