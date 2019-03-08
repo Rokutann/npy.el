@@ -200,5 +200,68 @@
 ;; to delete this manipulation after establishing the better handling.
 
 
+;;; About the interface between the file system and buffers.
+
+;; * The original information about projects such as Pipenv and pip
+;;   projects resides in the file system.
+
+;; * The behavior of functions varies buffer to buffer along with
+;;   which file it's visiting or the `default-directory' of the
+;;   buffer.
+
+;; * What kind of layer(s) we define between these two is the crux of
+;;   the design of this software.
+
+;; * As of v0.1.5, we have `npy-env', a buffer-local variable which
+;;   holds the values of the projects the file visited by the buffer
+;;   belongs to.
+
+;; * Most of such information's scope is not buffer-local but
+;;   dir-local.  So, we've created pools to hold the mapping between
+;;   projects and their root directories.
+
+;; * So, the current interface design is:
+
+;; file system <-> pool: dir-proj mapping <-> cache: proj-buffer mapping
+
+;; * As of v0.1.5, the pools are dedicated to a type of project. For
+;;   example, `pipenv-known-projects' pool is only for Pipenv
+;;   projects.
+
+;; * Is this okay? Should we put together all the pools' information
+;;   into a single pool?
+
+;; * Yes. Because, project detections should be done not separately
+;;   but all at once. For, we need to ask the user's decision if a
+;;   file belongs to two different types of projects.
+
+;; * Then how?
+
+;; * The key should be a path, and the value should be a list of
+;;   projects it belongs to and the additional information for the
+;;   projects.
+
+;; * The path should be dealt as a string or a list?
+
+;; * Maybe a list, and the pool structure should be some kind of tree
+;;   structures such as a kind of trie. Because, it it's a sting, to
+;;   get information of its parent dir, we need to search the pool
+;;   with the path of the parent again. It's unnatural, because if
+;;   it's a list we just grab the parent by following cons cells.
+
+;; * Elisp allows any letter to be used in symbol names. So, if we go
+;;   with a trie, we can use a symbol instead of a string as the value
+;;   of a node if symbol lookup is so faster than `string='.  (But it
+;;   will create lots of symbols that can be shown to the user when
+;;   she does some completion...)
+
+;; * We'll try implementing a trie in v0.1.7.
+
+;; * So, what's the testing strategy for v0.1.6?
+
+;; * Mainly add integration tests for new user facing functions. It's
+;;   too early to write unit tests, since we'll rewrite pool logics in
+;;   v0.1.7.
+
 (provide 'design-note)
 ;;; design-note.el ends here
