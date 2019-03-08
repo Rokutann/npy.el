@@ -251,9 +251,10 @@
 
 ;; * Elisp allows any letter to be used in symbol names. So, if we go
 ;;   with a trie, we can use a symbol instead of a string as the value
-;;   of a node if symbol lookup is so faster than `string='.  (But it
-;;   will create lots of symbols that can be shown to the user when
-;;   she does some completion...)
+;;   of a node if symbol lookup is so faster than `string='.  But it
+;;   would create lots of symbols that can be shown to the user when
+;;   she does some completion if a dedicated obarray for a trie
+;;   couldn't be implemented.
 
 ;; * We'll try implementing a trie in v0.1.7.
 
@@ -262,6 +263,11 @@
 ;; * Mainly add integration tests for new user facing functions. It's
 ;;   too early to write unit tests, since we'll rewrite pool logics in
 ;;   v0.1.7.
+
+;; * Let's try `butter-cup'. When it comes to integration testing, ert
+;;   seemingly can manage not so large number of tests, since putting
+;;   all descriptions of a test into a function name make reading
+;;   tests hard.
 
 (provide 'design-note)
 ;;; design-note.el ends here
