@@ -22,6 +22,9 @@ essence:
 integration:
 	${CASK} exec ert-runner test/npy-integration-test.el
 
+buttercup-essence:
+	$(CASK) exec buttercup test/essential -l test/test-helper.el
+
 npy-scratch:
 	${CASK} exec ert-runner test/npy-scratch-test.el
 
