@@ -39,177 +39,235 @@
 ;; For executing tests in Emacs manually.
 ;; (setq npy-test/playground-path "/tmp/npy-playground/")
 
-(ert-deftest npy-integration-test/open-a-file-in-a-project/pipenv-project-root ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project1/buz.py")
-      (with-current-buffer "buz.py"
-        (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))))))
+(require 'buttercup)
+(require 'seq)
+(require 'f)
+(require 's)
+(require 'exec-path-from-shell)
 
-(ert-deftest npy-integration-test/open-a-file-in-a-project/pipenv-virtualenv-root ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project1/buz.py")
-      (with-current-buffer "buz.py"
-        (npy-update-pipenv-virtualenv-root)
-        (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1))))))
+(message "Running tests on Emacs %s" emacs-version)
 
-(ert-deftest npy-integration-test/open-a-file-deep-in-a-project ()
-  (with-files-in-playground (("project2/deep/in/the/project/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project2/deep/in/the/project/buz.py")
-      (with-current-buffer "buz.py"
-        (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project2")))))))
+(setq-default exec-path-from-shell-arguments nil)
+(exec-path-from-shell-initialize)
 
-(ert-deftest npy-integration-test/open-a-non-project-file/pipenv-project-root ()
-  (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
-    (with-file-buffers ("project3/foo.py")
-      (with-current-buffer "foo.py"
-        (should (eq (gpc-val 'pipenv-project-root npy-env) :no-pipenv-project))))))
+(defvar npy-test/test-path
+  (directory-file-name (file-name-directory load-file-name))
+  "Path to tests directory.")
 
-(ert-deftest npy-integration-test/open-a-non-project-file/pipenv-virtualenv-root ()
-  (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
-    (with-file-buffers ("project3/foo.py")
-      (with-current-buffer "foo.py"
-        (npy-update-pipenv-virtualenv-root)
-        (should (eq (gpc-val 'pipenv-virtualenv-root npy-env) :no-pipenv-project))))))
+(defvar npy-test/root-path
+  (directory-file-name (f-dirname (file-name-directory npy-test/test-path)))
+  "Path to root directory.")
 
-(ert-deftest npy-integration-test/open-two-files-in-a-project ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1")
-                             ("project1/foo.py" . "VAR = 2"))
-    (with-file-buffers ("project1/buz.py" "project1/foo.py")
-      (with-current-buffer "buz.py"
-        (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-        (npy-update-pipenv-virtualenv-root)
-        (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1)))
-      (with-current-buffer "foo.py"
-        (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-        (npy-update-pipenv-virtualenv-root)
-        (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1))))))
+(defvar npy-test/playground-path
+  "/tmp/npy-playground/"
+  "Path to the playground for test.")
 
-(ert-deftest npy-integration-test/open-two-files-in-different-projects/pipenv-project-root ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1")
-                             ("project2/foo.py" . "VAR = 2"))
-    (with-file-buffers ("project1/buz.py" "project2/foo.py")
-      (set-buffer "buz.py")
-      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-      (set-buffer "foo.py")
-      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project2"))))))
+(defvar npy-test/python-wait
+  1
+  "Sleep for duration after inputting somethng to a Python interpreter.")
 
-(ert-deftest npy-integration-test/open-two-files-in-different-projects/pipenv-virtualenv-root ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1")
-                             ("project2/foo.py" . "VAR = 2"))
-    (with-file-buffers ("project1/buz.py" "project2/foo.py")
-      (set-buffer "buz.py")
-      (npy-update-pipenv-virtualenv-root)
-      (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1))
-      (set-buffer "foo.py")
-      (npy-update-pipenv-virtualenv-root)
-      (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project2)))))
+(load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
+(npy-mode 1)
+;;(npy-initialize)
 
-(ert-deftest npy-integration-test/spawn-an-inferior-python-buffer/check-buffer-name ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project1/buz.py")
-      (set-buffer "buz.py")
-      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-      (npy-run-python)
-      (npy-helper-wait)
-      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
-        (should-not (eq  python-inf-buf nil))
-        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+(setq npy-test/venv-root-for-project1 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project1/ && pipenv --venv)")))
+(setq npy-test/venv-root-for-project2 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project2/ && pipenv --venv)")))
 
-(ert-deftest npy-integration-test/spawn-a-dedicated-inferior-python-buffer/check-buffer-name ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project1/buz.py")
-      (set-buffer "buz.py")
-      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-      (npy-run-python t)
-      (npy-helper-wait)
-      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1;b:buz.py]*")))
-        (should-not (eq  python-inf-buf nil))
-        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+(describe "npy-env"
+  (describe "on a python-mode buffer visiting a file in a Pipenv project"
+    (it "has pipenv-project-root set to the Pipenv root directory"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+        (with-file-buffers ("project1/buz.py")
+          (with-current-buffer "buz.py"
+            (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))))))
+    (it "has pipenv-project-root set to the Pipenv root directory
+    even the file is located deep inside the project directory"
+      (with-files-in-playground (("project2/deep/in/the/project/buz.py" . "VAR = 1"))
+        (with-file-buffers ("project2/deep/in/the/project/buz.py")
+          (with-current-buffer "buz.py"
+            (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project2")))))))
+    (it "has pipenv-virtualenv-root set to the Pipenv project's virtualenv rood directory"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+        (with-file-buffers ("project1/buz.py")
+          (with-current-buffer "buz.py"
+            (npy-update-pipenv-virtualenv-root)
+            (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1)))))))
+  (describe "on a python-mode buffer visiting a file not in a Pipenv project"
+    (it "has pipenv-project-root set to :no-pipenv-virtualenv"
+      (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
+        (with-file-buffers ("project3/foo.py")
+          (with-current-buffer "foo.py"
+            (should (eq (gpc-val 'pipenv-project-root npy-env) :no-pipenv-project))))))
+    (it "has pipenv-virtualenv-root set to :no-pipenv-virtualenv"
+      (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
+        (with-file-buffers ("project3/foo.py")
+          (with-current-buffer "foo.py"
+            (npy-update-pipenv-virtualenv-root)
+            (should (eq (gpc-val 'pipenv-virtualenv-root npy-env) :no-pipenv-project)))))))
+  (describe "when there are two python-mode buffers for a same Pipenv project"
+    (it "have pipenv-project-root and pipenv-virtualenv-root
+    values set to the same Pipenv project"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1")
+                                 ("project1/foo.py" . "VAR = 2"))
+        (with-file-buffers ("project1/buz.py" "project1/foo.py")
+          (with-current-buffer "buz.py"
+            (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+            (npy-update-pipenv-virtualenv-root)
+            (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1)))
+          (with-current-buffer "foo.py"
+            (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+            (npy-update-pipenv-virtualenv-root)
+            (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1)))))))
+  (describe "when there are two python-mode buffers visiting files in different Pipenv projects"
+    (it "has pipenv-project-root set to the Pipenv project root
+    the file it's visiting belongs to respectively"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1")
+                                 ("project2/foo.py" . "VAR = 2"))
+        (with-file-buffers ("project1/buz.py" "project2/foo.py")
+          (set-buffer "buz.py")
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (set-buffer "foo.py")
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project2"))))))
+    (it "has pipenv-virtualenv-root set to the Pipenv project
+    root the file it's visiting belongs to respectively"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1")
+                                 ("project2/foo.py" . "VAR = 2"))
+        (with-file-buffers ("project1/buz.py" "project2/foo.py")
+          (set-buffer "buz.py")
+          (npy-update-pipenv-virtualenv-root)
+          (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project1))
+          (set-buffer "foo.py")
+          (npy-update-pipenv-virtualenv-root)
+          (should (equal (gpc-val 'pipenv-virtualenv-root npy-env) npy-test/venv-root-for-project2)))))))
 
-(ert-deftest npy-integration-test/spawn-an-inferior-python-buffer/check-sys-path ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-    (with-file-buffers ("project1/buz.py")
-      (set-buffer "buz.py")
-      (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-      (npy-run-python)
-      (npy-helper-wait)
-      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
-        (should-not (eq  python-inf-buf nil))
-        (should-response-match python-inf-buf
-          "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
-        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+(describe "npy-run-python"
+  (describe "when called on a python-mode buffer visiting a file in a Pipenv project"
+    (it "spawns a virrualenv dedicated inferior python buffer
+    whose buffer name contains the Pipenv project name"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+        (with-file-buffers ("project1/buz.py")
+          (set-buffer "buz.py")
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (npy-run-python)
+          (npy-helper-wait)
+          (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
+            (should-not (eq  python-inf-buf nil))
+            (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+    (it "spawns a virrualenv dedicated inferior python buffer
+    whose sys.path contans the virtualenv root"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+        (with-file-buffers ("project1/buz.py")
+          (set-buffer "buz.py")
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (npy-run-python)
+          (npy-helper-wait)
+          (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
+            (should-not (eq  python-inf-buf nil))
+            (should-response-match python-inf-buf
+              "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
+            (npy-helper-kill-python-inferior-buffers python-inf-buf))))))
+  (describe "when called with `dedicated' set to t on a
+  python-mode buffer visiting a file in a Pipenv project"
+    (it "spawns a virrualenv-buffer dedicated inferior python
+    buffer whose buffer name contains the Pipenv project naem and
+    buffer name where it was spawned"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+        (with-file-buffers ("project1/buz.py")
+          (set-buffer "buz.py")
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (npy-run-python t)
+          (npy-helper-wait)
+          (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1;b:buz.py]*")))
+            (should-not (eq  python-inf-buf nil))
+            (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+    (it "spawns a virrualenv-buffer dedicated inferior python buffer
+    whose sys.path contans the virtualenv root"
+      (with-files-in-playground (("project1/buz.py" . "VAR = 1")
+                                 ("project2/foo.py" . "VAR = 2"))
+        (with-file-buffers ("project1/buz.py" "project2/foo.py")
+          (with-current-buffer "buz.py"
+            (npy-run-python))
+          (with-current-buffer "foo.py"
+            (npy-run-python))
+          (npy-helper-wait)
+          (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+                (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
+            (should-response-match python-inf-buf-1
+              "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
+            (should-response-match python-inf-buf-2
+              "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project2)
+            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))))
 
-(ert-deftest npy-integration-test/spawn-two-inferior-python-buffers/check-sys-path ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = 1")
-                             ("project2/foo.py" . "VAR = 2"))
-    (with-file-buffers ("project1/buz.py" "project2/foo.py")
-      (with-current-buffer "buz.py"
-        (npy-run-python))
-      (with-current-buffer "foo.py"
-        (npy-run-python))
-      (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project2]*")))
-        (should-response-match python-inf-buf-1
-          "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
-        (should-response-match python-inf-buf-2
-          "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project2)
-        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
-
-(ert-deftest npy-integration-test/spawn-an-inferior-python-buffer/send-string ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\""))
-    (with-file-buffers ("project1/buz.py")
-      (with-current-buffer  "buz.py"
-        (npy-run-python)
-        (npy-helper-wait))
-      (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
-        (with-current-buffer "buz.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf
-          "print(VAR)\n" "from buz.py")
-        (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
-
-(ert-deftest npy-integration-test/spawn-a-normal-inf-buffer-and-a-venv-buffer/simple ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
-                             ("project3/foo.py" . "VAR = \"from foo.py\""))
-    (with-file-buffers ("project1/buz.py" "project3/foo.py")
-      (with-current-buffer "buz.py"
-        (npy-run-python))
-      (with-current-buffer "foo.py"
-        (run-python))
-      (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python*")))
-        (with-current-buffer "buz.py"
-          (python-shell-send-buffer))
-        (with-current-buffer "foo.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf-1
-          "print(VAR)\n" "from buz.py")
-        (should-response-match python-inf-buf-2
-          "print(VAR)\n" "from foo.py")
-        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
-
-(ert-deftest npy-integration-test/spawn-a-venv-inf-buffer-and-a-venv-dedicated-inf-buffer ()
-  (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
-                             ("project1/foo.py" . "VAR = \"from foo.py\""))
-    (with-file-buffers ("project1/buz.py" "project1/foo.py")
-      (with-current-buffer "buz.py"
-        (npy-run-python))
-      (with-current-buffer "foo.py"
-        (npy-run-python t))
-      (npy-helper-wait)
-      (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
-            (python-inf-buf-2 (get-buffer "*Python[Pipenv:project1;b:foo.py]*")))
-        (with-current-buffer "buz.py"
-          (python-shell-send-buffer))
-        (with-current-buffer "foo.py"
-          (python-shell-send-buffer))
-        (should-response-match python-inf-buf-1
-          "print(VAR)\n" "from buz.py")
-        (should-response-match python-inf-buf-2
-          "print(VAR)\n" "from foo.py")
-        (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))
+(describe "python-shell-send-buffer"
+  (describe "when there are a python-mode buffer visiting a file
+   in a Pipenv project and a virtualenv dedicated inferior python
+   buffer dedicated to the same virtualenv"
+    (describe "if called on the python-mode buffer with a code chunk "
+      (it "dispatches the chunk to the virtualenv dedicated inferior python buffer"
+        (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\""))
+          (with-file-buffers ("project1/buz.py")
+            (with-current-buffer  "buz.py"
+              (npy-run-python)
+              (npy-helper-wait))
+            (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
+              (with-current-buffer "buz.py"
+                (python-shell-send-buffer))
+              (should-response-match python-inf-buf
+                "print(VAR)\n" "from buz.py")
+              (npy-helper-kill-python-inferior-buffers python-inf-buf)))))))
+  (describe "when there are two python-mode buffers: buffer-1 is
+  visiting a file in a Pipenv project, and buffer-2 is visiting a
+  file not in a Pipenv project, and there are two inferior python
+  mode buffers: inf-buf1 is dedicated to the Pipenv project and
+  inf-buf-2 is a normal one"
+    (it "dispatches a code chunk from buffer-1 into inf-buf-1,
+    and a code chunk from buffer-2 into inf-buf-2"
+      (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
+                                 ("project3/foo.py" . "VAR = \"from foo.py\""))
+        (with-file-buffers ("project1/buz.py" "project3/foo.py")
+          (with-current-buffer "buz.py"
+            (npy-run-python))
+          (with-current-buffer "foo.py"
+            (run-python))
+          (npy-helper-wait)
+          (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+                (python-inf-buf-2 (get-buffer "*Python*")))
+            (with-current-buffer "buz.py"
+              (python-shell-send-buffer))
+            (with-current-buffer "foo.py"
+              (python-shell-send-buffer))
+            (should-response-match python-inf-buf-1
+              "print(VAR)\n" "from buz.py")
+            (should-response-match python-inf-buf-2
+              "print(VAR)\n" "from foo.py")
+            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2))))))
+  (describe "when there are two python-mode buffers: buffer-1 is
+  visiting a file in a Pipenv project, and buffer-2 is visiting a
+  different file in a same Pipenv project, and there are two
+  inferior python mode buffers: inf-buf1 is dedicated to the
+  Pipenv project and inf-buf-2 is dedicated to the Pipenv project
+  and buffer-2"
+    (it "dispatches a code chunk from buffer-1 into inf-buf-1,
+    and a code chunk from buffer-2 into inf-buf-2"
+      (with-files-in-playground (("project1/buz.py" . "VAR = \"from buz.py\"")
+                                 ("project1/foo.py" . "VAR = \"from foo.py\""))
+        (with-file-buffers ("project1/buz.py" "project1/foo.py")
+          (with-current-buffer "buz.py"
+            (npy-run-python))
+          (with-current-buffer "foo.py"
+            (npy-run-python t))
+          (npy-helper-wait)
+          (let ((python-inf-buf-1 (get-buffer "*Python[Pipenv:project1]*"))
+                (python-inf-buf-2 (get-buffer "*Python[Pipenv:project1;b:foo.py]*")))
+            (with-current-buffer "buz.py"
+              (python-shell-send-buffer))
+            (with-current-buffer "foo.py"
+              (python-shell-send-buffer))
+            (should-response-match python-inf-buf-1
+              "print(VAR)\n" "from buz.py")
+            (should-response-match python-inf-buf-2
+              "print(VAR)\n" "from foo.py")
+            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))))
 
 (provide 'npy-integration-additional-test)
 ;;; npy-integration-additional-test.el ends here
