@@ -3,15 +3,28 @@ CASK ?= cask
 
 all: test
 
-test: clean-elc delete-playground
+ert-test: clean-elc delete-playground
 	${MAKE} create-playground
 	${MAKE} ert-all
 	${MAKE} compile
 	${MAKE} ert-all
 	${MAKE} delete-playground
 
-check-travis: playground
-	sh test/check-travis.sh
+test: clean-elc delete-playground
+	${MAKE} create-playground
+	${MAKE} buttercup-all
+	${MAKE} compile
+	${MAKE} buttercup-all
+	${MAKE} delete-playground
+
+buttercup-all:
+	$(CASK) exec buttercup test -L . -l test/test-helper.el -l test/npy-buttercup-init.el
+
+buttercup-essence:
+	$(CASK) exec buttercup test/essential -L . -l test/test-helper.el -l test/npy-buttercup-init.el
+
+buttercup-additional:
+	$(CASK) exec buttercup test/additional -L . -l test/test-helper.el -l test/npy-buttercup-init.el
 
 ert-all:
 	${CASK} exec ert-runner
@@ -19,23 +32,14 @@ ert-all:
 essence:
 	${CASK} exec ert-runner test/npy-integration-essential-test.el test/npy-scratch-essential-test.el
 
-integration:
-	${CASK} exec ert-runner test/npy-integration-test.el
-
-buttercup-essence:
-	$(CASK) exec buttercup test/essential -l test/test-helper.el
-
-buttercup-additional:
-	$(CASK) exec buttercup test/additional -l test/test-helper.el
-
-npy-scratch:
-	${CASK} exec ert-runner test/npy-scratch-test.el
-
 compile:
 	${CASK} exec ${EMACS} -Q -batch -f batch-byte-compile npy.el
 
 clean-elc:
 	rm -f npy.elc
+
+check-travis: playground
+	sh test/check-travis.sh
 
 create-playground:
 	sh test/create-playground.sh

@@ -24,45 +24,6 @@
 
 ;;; Code:
 
-(require 'buttercup)
-(require 'seq)
-(require 'f)
-(require 's)
-(require 'exec-path-from-shell)
-
-(message "Running tests on Emacs %s" emacs-version)
-
-;; (after-load 'exec-path-from-shell
-;;   (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
-;;     (add-to-list 'exec-path-from-shell-variables var)))
-
-
-(setq-default exec-path-from-shell-arguments nil)
-(exec-path-from-shell-initialize)
-
-(defvar npy-test/test-path
-  (directory-file-name (file-name-directory load-file-name))
-  "Path to tests directory.")
-
-(defvar npy-test/root-path
-  (directory-file-name (f-dirname (file-name-directory npy-test/test-path)))
-  "Path to root directory.")
-
-(defvar npy-test/playground-path
-  "/tmp/npy-playground/"
-  "Path to the playground for test.")
-
-(defvar npy-test/python-wait
-  1
-  "Sleep for duration after inputting somethng to a Python interpreter.")
-
-(load (expand-file-name "npy" npy-test/root-path) 'noerror 'nomessage)
-(npy-mode 1)
-;;(npy-initialize)
-
-(setq npy-test/venv-root-for-project1 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project1/ && pipenv --venv)")))
-(setq npy-test/venv-root-for-project2 (s-chomp (shell-command-to-string "(cd /tmp/npy-playground/project2/ && pipenv --venv)")))
-
 (describe "Python Scratch Buffer Feature:"
   (describe "when you have a virtualenv-buffer dedicated inferior
   python buffer spawned on a virtualenv-buffer dedicated python
