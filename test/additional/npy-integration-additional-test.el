@@ -1,4 +1,4 @@
-;;; npy-integration-additional-test.el --- npy: Tests.                      -*- lexical-binding: t; -*-
+;;; npy-integration-additional-test.el --- Additional integration tests for npy.  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Cyriakus "Mukuge" Hill
 
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; Tests for npy.
+;; Additional integration tests for npy.
 
 ;;; Code:
 

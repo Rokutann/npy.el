@@ -1,4 +1,4 @@
-;;; npy-new-test.el --- New tests for npy.el.        -*- lexical-binding: t; -*-
+;;; npy-scratch-additional-test.el --- Additional tests for npy-scratch. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Cyriakus "Mukuge" Hill
 
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; New tests for npy.el.
+;; Additional tests for npy-scratch.
 
 ;;; Code:
 
@@ -181,5 +181,5 @@
                 (should-response-match inf-buf
                   "print(VAR7)\n" "from scratch")))))))))
 
-(provide 'npy-new-test)
-;;; npy-new-test.el ends here
+(provide 'npy-scratch-additional-test)
+;;; npy-scratch-additional-test.el ends here

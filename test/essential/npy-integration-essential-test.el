@@ -1,4 +1,4 @@
-;;; npy-buttercup-test.el --- Integration tests for npy.  -*- lexical-binding: t; -*-
+;;; npy-integration-essential-test.el --- Essential integration tests for npy.  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Cyriakus "Mukuge" Hill
 
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; Integration tests for npy with `buffercup'.
+;; Essential integration tests for npy.
 
 ;;; Code:
 (describe "dispatch feature: dispatching code chunnks from
@@ -103,5 +103,5 @@ buffers"
               "print(VAR)\n" "from foo.py")
             (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))))
 
-(provide 'npy-buttercup-test)
-;;; npy-buttercup-test.el ends here
+(provide 'npy-integration-essential-test)
+;;; npy-integration-essential-test.el ends here

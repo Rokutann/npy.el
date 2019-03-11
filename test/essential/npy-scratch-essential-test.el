@@ -1,4 +1,4 @@
-;;; npy-scratch-short-test.el --- New tests for npy.el.        -*- lexical-binding: t; -*-
+;;; npy-scratch-essential-test.el --- Essential tests for npy-scratch. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Cyriakus "Mukuge" Hill
 
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; New tests for npy.el.
+;; Essential tests for npy-scratch.
 
 ;;; Code:
 
@@ -66,5 +66,5 @@
               (should-response-match inf-buf
                 "print(VAR5)\n" "from scratch"))))))))
 
-(provide 'npy-scratch-short-test)
-;;; npy-new-test.el ends here
+(provide 'npy-scratch-essential-test)
+;;; npy-scratch-essential-test.el ends here
