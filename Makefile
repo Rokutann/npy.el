@@ -26,6 +26,9 @@ buttercup-essence:
 buttercup-additional:
 	$(CASK) exec buttercup test/additional -L . -l test/test-helper.el -l test/npy-buttercup-init.el
 
+buttercup-npy-env:
+	$(CASK) exec buttercup test/npy-env -L . -l test/test-helper.el -l test/npy-buttercup-init.el
+
 ert-all:
 	${CASK} exec ert-runner
 
