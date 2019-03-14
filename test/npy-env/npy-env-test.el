@@ -59,7 +59,8 @@
             (with-current-buffer "buz.py"
               (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project2"))
               (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project2")
-              (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2) ;; FIXME: Currently, this value is :no-pipenv-project.
+              (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2)
+              ;; FIXME: Currently, this value is :no-pipenv-project.
               (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project2)
               (expect npy-buffer-scratch :to-be nil)
               (expect npy-buffer-shell-initialized :to-be nil)
@@ -95,7 +96,8 @@
           (with-current-buffer "project"
             (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project2"))
             (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project2")
-            (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2) ;; FIXME: Currently, this value is :no-pipenv-project.
+            (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2)
+            ;; FIXME: Currently, this value is :no-pipenv-project.
             (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project2)
             (expect npy-buffer-scratch :to-be nil)
             (expect npy-buffer-shell-initialized :to-be nil)
@@ -187,7 +189,268 @@
               (expect npy-buffer-scratch :to-be nil)
               (expect npy-buffer-shell-initialized :to-be nil)
               (expect npy-buffer-dedicated-to :to-be nil)
-              (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "foo.py"))))))))
+              (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "foo.py"))))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv dedicated inferior python buffer on it,"
+      (it "for the two buffers are associated with the same Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-run-python)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be nil)
+                  (expect npy-buffer-shell-initialized :to-be t)
+                  (expect npy-buffer-dedicated-to :to-be nil)
+                  (expect npy-buffer-child-dedicatable-to :to-be nil))))
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv-buffer dedicated inferior python buffer on it,"
+      (it "for the two buffers are associated with the same Pipenv project."
+        (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+          (with-file-buffers ("project1/buz.py")
+            (with-current-buffer "buz.py"
+              (npy-run-python t)
+              (npy-helper-wait))
+            (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
+              (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+              (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+              (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+              (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+              (expect npy-buffer-scratch :to-be nil)
+              (expect npy-buffer-shell-initialized :to-be t)
+              (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
+              (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))
+            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv dedicated scratch buffer for Python on it,"
+      (it "for the two buffers are associated with the same Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-scratch))
+                (with-current-buffer "*pyscratch[Pipenv:project1]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be t)
+                  (expect npy-buffer-shell-initialized :to-be nil)
+                  (expect npy-buffer-dedicated-to :to-be nil)
+                  (expect npy-buffer-child-dedicatable-to :to-be nil))))
+          (kill-buffer "*pyscratch[Pipenv:project1]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv-buffer dedicated scratch buffer for Python on it,"
+      (it "for the two buffers are associated with the same Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-scratch t))
+                (with-current-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be t)
+                  (expect npy-buffer-shell-initialized :to-be nil)
+                  (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
+                  (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
+          (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"))))
+    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv dedicated inferior python buffer on it,"
+      (it "for the two buffers are associated with the same Pipenv project."
+        (unwind-protect
+            (with-file-buffers ("project1")
+              (with-current-buffer "project1"
+                (npy-run-python)
+                (npy-helper-wait))
+              (with-current-buffer "*Python[Pipenv:project1]*"
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                (expect npy-buffer-scratch :to-be nil)
+                (expect npy-buffer-shell-initialized :to-be t)
+                (expect npy-buffer-dedicated-to :to-be nil)
+                (expect npy-buffer-child-dedicatable-to :to-be nil)))
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*"))))
+    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv-buffer dedicated inferior python buffer on it,"
+      (it "npy-run-python throws an error."
+        (with-file-buffers ("project1")
+          (with-current-buffer "project1"
+            (expect (npy-run-python t) :to-throw 'error)))))
+    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv dedicated scratch buffer for Python on it,"
+      (it "for the two buffers are associated with the same Pipenv project."
+        (unwind-protect
+            (with-file-buffers ("project1")
+              (with-current-buffer "project1"
+                (npy-scratch))
+              (with-current-buffer "*pyscratch[Pipenv:project1]*"
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                (expect npy-buffer-scratch :to-be t)
+                (expect npy-buffer-shell-initialized :to-be nil)
+                (expect npy-buffer-dedicated-to :to-be nil)
+                (expect npy-buffer-child-dedicatable-to :to-be nil)))
+          (kill-buffer "*pyscratch[Pipenv:project1]*"))))
+    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv-buffer dedicated scratch buffer for Python on it,"
+      (it "npy-scratch throws an error."
+        (with-file-buffers ("project1")
+          (with-current-buffer "project1"
+            (expect (npy-scratch t) :to-throw 'error))))))
+  (describe "three buffer cases:"
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-scratch))
+                (with-current-buffer "*pyscratch[Pipenv:project1]*"
+                  (npy-run-python)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be nil)
+                  (expect npy-buffer-shell-initialized :to-be t)
+                  (expect npy-buffer-dedicated-to :to-be nil)
+                  (expect npy-buffer-child-dedicatable-to :to-be nil))))
+          (kill-buffer "*pyscratch[Pipenv:project1]*")
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-scratch t))
+                (with-current-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"
+                  (npy-run-python)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be nil)
+                  (expect npy-buffer-shell-initialized :to-be t)
+                  (expect npy-buffer-dedicated-to :to-be nil)
+                  (expect npy-buffer-child-dedicatable-to :to-be nil))))
+          (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-scratch t))
+                (with-current-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"
+                  (npy-run-python t)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be nil)
+                  (expect npy-buffer-shell-initialized :to-be t)
+                  (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
+                  (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
+          (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-scratch))
+                (with-current-buffer "*pyscratch[Pipenv:project1]*"
+                  (expect (npy-run-python t) :to-throw 'error))))
+          (kill-buffer "*pyscratch[Pipenv:project1]*")
+          )))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv dedicated scratch buffer for Python."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-run-python)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1]*"
+                  (npy-scratch))
+                (with-current-buffer "*pyscratch[Pipenv:project1]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be t)
+                  (expect npy-buffer-shell-initialized :to-be nil)
+                  (expect npy-buffer-dedicated-to :to-be nil)
+                  (expect npy-buffer-child-dedicatable-to :to-be nil))))
+          (kill-buffer "*pyscratch[Pipenv:project1]*")
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv dedicated scratch buffer for Python."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-run-python t)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
+                  (npy-scratch))
+                (with-current-buffer "*pyscratch[Pipenv:project1]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be t)
+                  (expect npy-buffer-shell-initialized :to-be nil)
+                  (expect npy-buffer-dedicated-to :to-be nil)
+                  (expect npy-buffer-child-dedicatable-to :to-be nil))))
+          (kill-buffer "*pyscratch[Pipenv:project1]*")
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv-buffer dedicated scratch buffer for Python."
+      (it "is, on the inferior buffer, associated with the Pipenv project."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-run-python t)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
+                  (npy-scratch t))
+                (with-current-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                  (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
+                  (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                  (expect npy-buffer-scratch :to-be t)
+                  (expect npy-buffer-shell-initialized :to-be nil)
+                  (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
+                  (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
+          (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*"))))
+    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv-buffer dedicated scratch buffer for Python."
+      (it "npy-scratch throws an error."
+        (unwind-protect
+            (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+              (with-file-buffers ("project1/buz.py")
+                (with-current-buffer "buz.py"
+                  (npy-run-python)
+                  (npy-helper-wait))
+                (with-current-buffer "*Python[Pipenv:project1]*"
+                  (expect (npy-scratch t) :to-throw 'error))))
+          (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*"))))))
 
 (provide 'npy-env-test)
 ;;; npy-env-test.el ends here
