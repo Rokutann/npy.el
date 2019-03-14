@@ -264,10 +264,17 @@
 ;;   too early to write unit tests, since we'll rewrite pool logics in
 ;;   v0.1.7.
 
-;; * Let's try `butter-cup'. When it comes to integration testing, ert
+;; * Let's try `buttercup'. When it comes to integration testing, ert
 ;;   seemingly can manage not so large number of tests, since putting
 ;;   all descriptions of a test into a function name make reading
 ;;   tests hard.
+
+;;; About PIPENV_MAX_DEPTH and PIPENV_NO_INHERIT.
+
+;; * pipenv has PIPENV_MAX_DEPTH and PIPENV_NO_INHERIT which can
+;;   affect the relationships between a directory with a Pipfile and
+;;   its subdirectories. We need to deal with this in the future
+;;   release.
 
 (provide 'design-note)
 ;;; design-note.el ends here

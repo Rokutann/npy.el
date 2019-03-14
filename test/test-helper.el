@@ -58,15 +58,26 @@ pair is the content for that file."
                  (file-exists-p fullname))
         (delete-file fullname)))))
 
-(defmacro with-files-in-playground (filespec &rest body)
-  "Execute BODY in the playground specified by FILESPEC."
-  (declare (indent 1))
+(defmacro with-npy-sandbox (&rest body)
+  "Clear up npy related variables before and after execute BODY."
+  (declare (indent 0))
   `(unwind-protect
        (progn
          (gpc-pool-clear 'pipenv-known-projects npy-env)
          (gpc-pool-clear 'pipenv-non-project-dirs npy-env)
          (gpc-pool-clear 'pip-known-projects npy-env)
          (gpc-pool-clear 'pip-non-project-dirs npy-env)
+         ,@body)
+     (gpc-pool-clear 'pipenv-known-projects npy-env)
+     (gpc-pool-clear 'pipenv-non-project-dirs npy-env)
+     (gpc-pool-clear 'pip-known-projects npy-env)
+     (gpc-pool-clear 'pip-non-project-dirs npy-env)))
+
+(defmacro with-files-in-playground (filespec &rest body)
+  "Execute BODY in the playground specified by FILESPEC."
+  (declare (indent 1))
+  `(unwind-protect
+       (progn
          (npy-helper-create-files npy-test/playground-path
                                   ',filespec)
          ,@body)

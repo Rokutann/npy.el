@@ -354,12 +354,13 @@ This function is designed to be called in a major or minor mode
 hook where you need to initialize npy-env and related
 variables.."
   (make-local-variable 'python-shell-virtualenv-root)
-  (when (derived-mode-p 'python-mode)
-    (setq npy-buffer-child-dedicatable-to (current-buffer)))
-  (gpc-get 'pipenv-project-root npy-env)   ;; FIXME: We may need `gpc-get-all'.
+  (gpc-get 'pipenv-project-root npy-env);; FIXME: We may need `gpc-get-all'.
   (gpc-get 'pipenv-project-name npy-env)
   (gpc-get 'pipenv-project-name-with-hash npy-env)
   (gpc-get 'pip-project-root npy-env)
+  (when (and (derived-mode-p 'python-mode)
+             (not (eq (gpc-val 'pipenv-project-root npy-env) :no-pipenv-project)))
+    (setq npy-buffer-child-dedicatable-to (current-buffer)))
   (when virtualenv
     (let ((venv-root (gpc-get 'pipenv-virtualenv-root npy-env)))
       (setq python-shell-virtualenv-root
