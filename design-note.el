@@ -269,12 +269,26 @@
 ;;   all descriptions of a test into a function name make reading
 ;;   tests hard.
 
-;;; About PIPENV_MAX_DEPTH and PIPENV_NO_INHERIT.
+;;; About PIPENV_MAX_DEPTH and PIPENV_NO_INHERIT
 
 ;; * pipenv has PIPENV_MAX_DEPTH and PIPENV_NO_INHERIT which can
 ;;   affect the relationships between a directory with a Pipfile and
 ;;   its subdirectories. We need to deal with this in the future
 ;;   release.
+
+;;; About the original python inferior buffers
+
+;; * Should introduce a new flag: npy-buffer-original-inferior to
+;;   isolate original inferior buffers from npy mechanism.
+
+;;; About the global inferior python buffer
+
+;; * Currently, if you want to spawn the global inferior python
+;;   buffer, you need to call run-python on a non Pipenv python-mode
+;;   buffer. It would be convenient if you could spawn the global
+;;   inferior python buffer from anywhere, for example, by putting
+;;   some prefix to npy-run-python.
+
 
 (provide 'design-note)
 ;;; design-note.el ends here

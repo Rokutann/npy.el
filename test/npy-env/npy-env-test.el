@@ -39,8 +39,8 @@
 ;; (setq npy-test/playground-path "/tmp/npy-playground/")
 
 (describe "npy-env and related buffer-local variables"
-  (describe "one buffer cases:"
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project,"
+  (describe "[one buffer cases] when you create one buffer:"
+    (describe "a python-mode buffer visiting a file in a Pipenv project,"
       (it "are associated with the Pipenv project."
         (with-npy-sandbox
           (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -68,7 +68,7 @@
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "buz.py")))))))
-    (describe "when spawn a non python-mode buffer visiting a file in a Pipenv project,"
+    (describe "a non python-mode buffer visiting a file in a Pipenv project,"
       (it "are associated with the Pipenv project."
         (with-npy-sandbox
           (with-files-in-playground (("project1/Makefile" . "test-doctest:\n\tpytest --doctest-modules .\n"))
@@ -82,7 +82,7 @@
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect npy-buffer-child-dedicatable-to :to-be nil)))))))
-    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project,"
+    (describe "a dired-mode buffer visiting a directory in a Pipenv project,"
       (it "are associated with the Pipenv project."
         (with-npy-sandbox
           (with-file-buffers ("project1")
@@ -108,7 +108,7 @@
               (expect npy-buffer-shell-initialized :to-be nil)
               (expect npy-buffer-dedicated-to :to-be nil)
               (expect npy-buffer-child-dedicatable-to :to-be nil))))))
-    (describe "when spawn a python-mode buffer visiting a file not in a Pipenv project,"
+    (describe "a python-mode buffer visiting a file not in a Pipenv project,"
       (it "are not associated with any Pipenv projects."
         (with-npy-sandbox
           (with-files-in-playground (("project3/foo.py" . "VAR = 2"))
@@ -121,9 +121,8 @@
                 (expect npy-buffer-scratch :to-be nil)
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
-                (expect npy-buffer-child-dedicatable-to :to-be nil) ;; FIXME: Currently this value is foo.py.
-                ))))))
-    (describe "when spawn a non python-mode buffer visiting a file not in a Pipenv project,"
+                (expect npy-buffer-child-dedicatable-to :to-be nil)))))))
+    (describe "a non python-mode buffer visiting a file not in a Pipenv project,"
       (it "are not associated with any Pipenv projects."
         (with-npy-sandbox
           (with-files-in-playground (("project3/Makefile" . "test-doctest:\n\tpytest --doctest-modules .\n"))
@@ -138,7 +137,7 @@
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect npy-buffer-child-dedicatable-to :to-be nil)
                 ))))))
-    (describe "when spawn a dired-mode buffer visiting a directory not in a Pipenv project,"
+    (describe "when you create a dired-mode buffer visiting a directory not in a Pipenv project,"
       (it "are not associated with any Pipenv projects."
         (with-file-buffers ("project3")
           (with-current-buffer "project3"
@@ -150,9 +149,9 @@
             (expect npy-buffer-shell-initialized :to-be nil)
             (expect npy-buffer-dedicated-to :to-be nil)
             (expect npy-buffer-child-dedicatable-to :to-be nil))))))
-  (describe "two buffer cases:"
-    (describe "when spawn two python-mode buffers for a same Pipenv project successively,"
-      (it "for the two buffers are associated with the same Pipenv project."
+  (describe "[two buffer cases] when you create two buffers:"
+    (describe "two python-mode buffers for a same Pipenv project successively,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (with-files-in-playground (("project1/buz.py" . "VAR = 1")
                                      ("project1/foo.py" . "VAR = 2"))
@@ -175,8 +174,8 @@
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "foo.py")))))))
-    (describe "when spawn two python-mode buffers visiting files in different Pipenv projects successively,"
-      (it "for the two buffers are associated with the Pipenv projects respectively"
+    (describe "two python-mode buffers visiting files in different Pipenv projects successively,"
+      (it "are associated with the Pipenv projects respectively"
         (with-npy-sandbox
           (with-files-in-playground (("project1/buz.py" . "VAR = 1")
                                      ("project2/foo.py" . "VAR = 2"))
@@ -199,8 +198,8 @@
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "foo.py")))))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv dedicated inferior python buffer on it,"
-      (it "for the two buffers are associated with the same Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -218,8 +217,8 @@
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv-buffer dedicated inferior python buffer on it,"
-      (it "for the two buffers are associated with the same Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
             (with-file-buffers ("project1/buz.py")
@@ -236,8 +235,44 @@
                 (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
                 (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))
               (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*"))))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv dedicated scratch buffer for Python on it,"
-      (it "for the two buffers are associated with the same Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> an inferior python buffer,"
+      (it "are, on both buffers, associated with the same Pipenv project."
+        (with-npy-sandbox
+          (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+            (with-file-buffers ("project1/buz.py")
+              (with-current-buffer "buz.py"
+                (run-python)
+                (npy-helper-wait))
+              (with-current-buffer "*Python*"
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-be nil)
+                (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                (expect npy-buffer-scratch :to-be nil)
+                (expect npy-buffer-shell-initialized :to-be nil)
+                (expect npy-buffer-dedicated-to :to-be nil)
+                (expect npy-buffer-child-dedicatable-to :to-be nil))
+              (npy-helper-kill-python-inferior-buffers "*Python*"))))))
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a dedicated inferior python buffer,"
+      (it "are, on both buffers, associated with the same Pipenv project."
+        (with-npy-sandbox
+          (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
+            (with-file-buffers ("project1/buz.py")
+              (with-current-buffer "buz.py"
+                (run-python (python-shell-calculate-command) t)
+                (npy-helper-wait))
+              (with-current-buffer "*Python[buz.py]*"
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
+                (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-be nil)
+                (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
+                (expect npy-buffer-scratch :to-be nil)
+                (expect npy-buffer-shell-initialized :to-be nil)
+                (expect npy-buffer-dedicated-to :to-be nil)
+                (expect npy-buffer-child-dedicatable-to :to-be nil))
+              (npy-helper-kill-python-inferior-buffers "*Python[buz.py]*"))))))
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated Python scratch buffer,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -254,8 +289,8 @@
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project, and spawn a virtualenv-buffer dedicated scratch buffer for Python on it,"
-      (it "for the two buffers are associated with the same Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated Python scratch buffer,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -272,8 +307,8 @@
                     (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
                     (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")))))
-    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv dedicated inferior python buffer on it,"
-      (it "for the two buffers are associated with the same Pipenv project."
+    (describe "a dired-mode buffer visiting a directory in a Pipenv project -> a virtualenv dedicated inferior python buffer,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-file-buffers ("project1")
@@ -290,14 +325,14 @@
                   (expect npy-buffer-dedicated-to :to-be nil)
                   (expect npy-buffer-child-dedicatable-to :to-be nil)))
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
-    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv-buffer dedicated inferior python buffer on it,"
+    (describe "a dired-mode buffer visiting a directory in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer,"
       (it "npy-run-python throws an error."
         (with-npy-sandbox
           (with-file-buffers ("project1")
             (with-current-buffer "project1"
               (expect (npy-run-python t) :to-throw 'error))))))
-    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv dedicated scratch buffer for Python on it,"
-      (it "for the two buffers are associated with the same Pipenv project."
+    (describe "a dired-mode buffer visiting a directory in a Pipenv project -> a virtualenv dedicated Python scratch buffer,"
+      (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-file-buffers ("project1")
@@ -313,15 +348,15 @@
                   (expect npy-buffer-dedicated-to :to-be nil)
                   (expect npy-buffer-child-dedicatable-to :to-be nil)))
             (kill-buffer "*pyscratch[Pipenv:project1]*")))))
-    (describe "when spawn a dired-mode buffer visiting a directory in a Pipenv project, and spawn a virtualenv-buffer dedicated scratch buffer for Python on it,"
+    (describe "a dired-mode buffer visiting a directory in a Pipenv project -> a virtualenv-buffer dedicated Python scratch buffer,"
       (it "npy-scratch throws an error."
         (with-npy-sandbox
           (with-file-buffers ("project1")
             (with-current-buffer "project1"
               (expect (npy-scratch t) :to-throw 'error)))))))
-  (describe "three buffer cases:"
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
-      (it "is, on the inferior buffer, associated with the Pipenv project."
+  (describe "[three buffer cases] when you create three buffers:"
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
+      (it "are, on the inferior buffer, associated with the Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -342,8 +377,8 @@
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
-      (it "is, on the inferior buffer, associated with the Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
+      (it "are, on the inferior buffer, associated with the Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -364,7 +399,7 @@
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
       (it "is, on the inferior buffer, associated with the Pipenv project."
         (with-npy-sandbox
           (unwind-protect
@@ -386,8 +421,8 @@
                     (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
-      (it "is, on the inferior buffer, associated with the Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
+      (it "are, on the inferior buffer, associated with the Pipenv project."
         (unwind-protect
             (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
               (with-file-buffers ("project1/buz.py")
@@ -395,10 +430,9 @@
                   (npy-scratch))
                 (with-current-buffer "*pyscratch[Pipenv:project1]*"
                   (expect (npy-run-python t) :to-throw 'error))))
-          (kill-buffer "*pyscratch[Pipenv:project1]*")
-          )))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv dedicated scratch buffer for Python."
-      (it "is, on the inferior buffer, associated with the Pipenv project."
+          (kill-buffer "*pyscratch[Pipenv:project1]*"))))
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv dedicated scratch buffer for Python."
+      (it "are, on the scratch buffer, associated with the Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -419,8 +453,8 @@
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv dedicated scratch buffer for Python."
-      (it "is, on the inferior buffer, associated with the Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv dedicated Python scratch buffer,"
+      (it "are, on the scratch buffer, associated with the Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -441,8 +475,8 @@
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv-buffer dedicated scratch buffer for Python."
-      (it "is, on the inferior buffer, associated with the Pipenv project."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv-buffer dedicated Python scratch buffer,"
+      (it "are, on the scratch buffer, associated with the Pipenv project."
         (with-npy-sandbox
           (unwind-protect
               (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
@@ -463,7 +497,7 @@
                     (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
             (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
-    (describe "when spawn a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv-buffer dedicated scratch buffer for Python."
+    (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv-buffer dedicated Python scratch buffer,"
       (it "npy-scratch throws an error."
         (with-npy-sandbox
           (unwind-protect
