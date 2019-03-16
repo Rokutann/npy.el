@@ -276,6 +276,24 @@
 ;;   its subdirectories. We need to deal with this in the future
 ;;   release.
 
+;; * The Pipenv poject information on the mode line should follow the
+;;   behavior of the pipenv command.  So, if the user doesn't set
+;;   PIPENV_MAX_DEPTH, at the directories deeper than grandchildren
+;;   from a Pipenv project root, the mode line should tell the user
+;;   that you are not in any Pipenv projects.
+
+;; * The cache mechanism of v0.1.6 treats Pipenv projects as a simple
+;;   top-down directory project.  We need more advanced cache
+;;   mechanism to deal with the complication of the Pipenv project
+;;   structures.
+
+;; * A variant of trie seems suitable to implement a new cache
+;;   mechanism.
+
+;; * However, we need to think about how to deal with Pipenv projects
+;;   on remote hosts, hopefully in collaboration with the anaconda
+;;   mode.
+
 ;;; About the original python inferior buffers
 
 ;; * Should introduce a new flag: npy-buffer-original-inferior to
