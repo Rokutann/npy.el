@@ -24,25 +24,67 @@
 
 ;;; Code:
 (describe "dispatch feature:"
-  (describe "when there is only a virtualenv dedicated inferior python buffer:"
+  (describe "when there is only one virtualenv dedicated inferior python buffer (inf-buf-a) spawned on a buffer (buf-a) in a Pipenv project (pipenv-a):"
     (describe "from python-mode buffers:"
-      (describe "a python-mode buffer where the inf buffer was spawned.")
-      (describe "another python-mode buffer in the same Pipenv project.")
+      (describe "buf-a.")
+      (describe "another python-mode buffer in pipenv-a.")
       (describe "a python-mode buffer in a different Pipenv project.")
       (describe "a python-mode buffer not in a Pipenv project."))
     (describe "from npy-scratch buffers:"
-      (describe "a venv dedicated scratch buffer spawned on the python-mode buffer where the inf buf was spawned.")
-      (describe "a venv-buffer-dedicated scratch buffer spawnd on the python-mode buffer where the inf buf was spawned.")
-      (describe "a venv dedicated scratch buffer spawned on another python-mode buffer where the inf buf was spawned.")
-      (describe "a venv-buffer-dedicated scratch buffer spawnd on another python-mode buffer where the inf buf was spawned."))
+      (describe "a venv dedicated scratch buffer spawned on buf-a.")
+      (describe "a venv-buffer-dedicated scratch buffer for buf-a.")
+      (describe "a venv dedicated scratch buffer spawned on another python-mode buffer in pipenv-a.")
+      (describe "a venv-buffer-dedicated scratch buffer spawnd on another python-mode in pipenv-a."))
     (describe "from inferior python buffers:"
-      (describe "the venv dedicated inf buffer itself.")
-      (describe "a venv-buffer dedicated inf buffer for the same Pipenv project.")
+      (describe "inf-buf-a.")
+      (describe "a venv-buffer dedicated inf buffer for pipenv-a.")
       (describe "a venv dedicated inf buffer for another Pipenv project.")
       (describe "a venv-buffer dedicated inf buffer for another Pipenv project.")
       (describe "an ordinary inferior python buffer.")
       (describe "an ordinary dedicated inferior python buffer.")))
-  (describe "when there is only a virtualenv-buffer dedicated inferior python buffer:"
+  (describe "when there is only one virtualenv-buffer dedicated inferior python buffer (inf-buf-a) for a buffer (buf-a) in a Pipenv project (pipenv-a):"
+    (describe "from python-mode buffers:"
+      (describe "buf-a.")
+      (describe "another python-mode buffer in pipenv-a.")
+      (describe "a python-mode buffer in a different Pipenv project.")
+      (describe "a python-mode buffer not in a Pipenv project."))
+    (describe "from npy-scratch buffers:"
+      (describe "a venv dedicated scratch buffer spawned on buf-a.")
+      (describe "a venv-buffer-dedicated scratch buffer spawnd on the python-mode buffer where the inf buf was spawned.")
+      (describe "a venv dedicated scratch buffer spawned on another python-mode buffer where the inf buf was spawned.")
+      (describe "a venv-buffer-dedicated scratch buffer spawnd on another python-mode buffer where the inf buf was spawned."))
+    (describe "from inferior python buffers:"
+      (describe "a venv dedicated inf buffer for the same Pipenv project.")
+      (describe "the venv-buffer dedicated inf buffer itself.")
+      (describe "a venv-buffer dedicated inf buffer for another python-mode in the same Pipenv project.")
+      (describe "a venv dedicated inf buffer for another Pipenv project.")
+      (describe "a venv-buffer dedicated inf buffer for another Pipenv project.")
+      (describe "an ordinary inferior python buffer.")
+      (describe "an ordinary dedicated inferior python buffer.")))
+  (describe "when there are two virtualenv dedicated inferior python buffers (inf-buf-a and inf-buf-b) for two Pipenv projects (pipenv-a and pipenv-b):"
+    (describe "from python-mode buffers:"
+      (describe "a python-mode buffer in pipenv-a.")
+      (describe "a python-mode buffer in pipenv-b."))
+    (describe "from npy-scratch buffers:"
+      (describe "a venv dedicated scratch buffer for pipenv-a.")
+      (describe "a venv dedicated scratch buffer for pipenv-b.")
+      (describe "a venv-buffer-dedicated scratch buffer for pipenv-a.")
+      (describe "a venv-buffer-dedicated scratch buffer for pipenv-b."))
+    (describe "from inferior python buffers:"
+      (describe "the inf-buf-a.")
+      (describe "the inf-buf-b.")))
+  (describe "when there are two virtualenv-buffer dedicated inferior python buffer (inf-buf-a (dedicated to buf-a) and inf-buf-b (dedicated to buf-b)) for the same Pipenv project:"
+    (describe "from python-mode buffers:"
+      (describe "the inf-buf-a.")
+      (describe "the inf-buf-b.")
+      (describe "another python-mode buffer in the same Pipenv project."))
+    (describe "from npy-scratch buffers:"
+      (describe "a venv-buffer-dedicated scratch buffer for buf-a.")
+      (describe "a venv-buffer-dedicated scratch buffer for buf-b."))
+    (describe "from inferior python buffers:"
+      (describe "the inf-buf-a.")
+      (describe "the inf-buf-b.")))
+  (describe "when there are one virtualenv didcated inferior python buffer and one virtualenv-buffer dedicated inferior python buffer for the same Pipenv project:"
     (describe "from python-mode buffers:"
       (describe "a python-mode buffer where the inf buffer was spawned.")
       (describe "another python-mode buffer in the same Pipenv project.")
@@ -61,6 +103,7 @@
       (describe "a venv-buffer dedicated inf buffer for another Pipenv project.")
       (describe "an ordinary inferior python buffer.")
       (describe "an ordinary dedicated inferior python buffer.")))
+
   (describe "when there are a virtualenv dedicated python scratch
   buffer and a virtualenv dedicated inferior python buffer
   spawned on the scratch buffer"
