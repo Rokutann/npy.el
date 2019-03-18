@@ -98,50 +98,6 @@
               (should-response-match inf-buf
                 "print(VAR3)\n" "from scratch"))))))))
 
-(describe "dispatch feature:"
-  (describe "when there are a virtualenv dedicated python scratch
-  buffer and a virtualenv dedicated inferior python buffer
-  spawned on the scratch buffer"
-    (it "dispatches a code chunk sent from a virtualenv dedicated
-  python scratch buffer to the inferior python buffer dedicated
-  to the same virtualenv"
-      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-        (with-file-buffers ("project1/buz.py")
-          (set-buffer "buz.py")
-          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-          (npy-scratch)
-          (npy-run-python)
-          (npy-helper-wait)
-          (let-to-kill ((scratch-buf (get-buffer "*pyscratch[Pipenv:project1]*"))
-                        (inf-buf (get-buffer "*Python[Pipenv:project1]*")))
-            (npy-helper-write "VAR1 = \"from scratch\"\n" scratch-buf)
-            (with-current-buffer scratch-buf
-              (python-shell-send-buffer))
-            (should-response-match inf-buf
-              "print(VAR1)\n" "from scratch"))))))
-  (describe "when there are a virtualenv-buffer dedicated python
-  scratch buffer and an inferior python dedicated to the same
-  virtualenv and buffer"
-    (it "dispatches a code chunk sent from the scratch buffer to
-    the inferior python buffer"
-      (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
-        (with-file-buffers ("project1/buz.py")
-          (set-buffer "buz.py")
-          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
-          (npy-run-python)
-          (npy-helper-wait)
-          (let-to-kill ((inf-buf (get-buffer "*Python[Pipenv:project1]*")))
-            (message "inf-buf: %s" inf-buf)
-            (set-buffer inf-buf)
-            (npy-scratch)
-            (let-to-kill ((scratch-buf (get-buffer "*pyscratch[Pipenv:project1]*")))
-              (message "scratch-buf: %s" scratch-buf)
-              (npy-helper-write "VAR4 = \"from scratch\"\n" scratch-buf)
-              (with-current-buffer scratch-buf
-                (python-shell-send-buffer))
-              (should-response-match inf-buf
-                "print(VAR4)\n" "from scratch"))))))))
-
 (describe "npy-run-python"
   (describe "when called on a virtualenv dedicated python scratch buffer"
     (it "spawns a virtualenv dedicated inferior python buffer
