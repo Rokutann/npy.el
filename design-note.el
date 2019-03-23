@@ -307,6 +307,22 @@
 ;;   inferior python buffer from anywhere, for example, by putting
 ;;   some prefix to npy-run-python.
 
+;;; About the buttercup framework
+
+;; * Buttercup ignores errors in setup scripts, suppressing debug
+;;   messages and/or debugger calls.  So, it's difficult to debug
+;;   setup scripts in before-all and/or before-each. We should write
+;;   and debug a setup script as an independent function, then put it
+;;   in before-all or before-each.
+
+;; * The describe macro takes :var as an argument to define variables
+;;   with let for the execution of the rest of the argument, but it's
+;;   not documented.
+
+;; * The features I want but couldn't find so far with Buttercup are:
+;;   1) a command line option to set not a test directory but test
+;;   file(s), 2) executing only tests previously failed, and 3) a flag
+;;   to activate debug-on-error.
 
 (provide 'design-note)
 ;;; design-note.el ends here

@@ -111,7 +111,7 @@ pair is the content for that file."
   "Wait the Python interpreter."
   (sleep-for npy-test/python-wait))
 
-(defmacro npy-helper-kill-python-inferior-buffers (&rest buffer-or-names)
+(defmacro npy-helper-kill-inferior-python-buffers (&rest buffer-or-names)
   "Kill all of BUFFER-OR-NAMES, which are bound to Python inferior processes."
   (declare (indent 0))
   `(progn
@@ -139,7 +139,7 @@ pair is the content for that file."
     (setq npy-test/match-flag t)))
 
 (defmacro should-response-match (buffer python-command regex)
-  "Check if the response of PYTHON-COMMAND in BUFFER matches REGEX."
+  "Check if the return value of PYTHON-COMMAND in BUFFER matches REGEX."
   (declare (indent 1))
   `(with-current-buffer ,buffer
      (let ((npy-test/match-flag nil)
@@ -169,12 +169,55 @@ pair is the content for that file."
   (when (buffer-live-p buffer)
     (with-current-buffer buffer
       (if (derived-mode-p 'inferior-python-mode)
-          (npy-helper-kill-python-inferior-buffers buffer)
+          (npy-helper-kill-inferior-python-buffers buffer)
         (kill-buffer)))))
+
 
 (defun npy-helper-write (string buffer)
   "Write STRING out to BUFFER."
   (mapc #'(lambda (char) (write-char char buffer)) string))
+
+;; (setq filespec '(("project1/foo.py" . "VAR1 = 1")))
+;; (setq npy-test/playground-path "/tmp/npy-playground/")
+
+;; (defun npy-helper-buttercup-setup ()
+;;   "Set up for buttercup testing."
+;;   (npy-helper-create-files "/tmp/npy-playground/" filespec)
+;;   (setq buf-a (@-find-file "project1/foo.py"))
+;;   (npy-helper-log-write "debug: buf-a: %s" buf-a)
+;;   (with-current-buffer buf-a
+;;     (npy-run-python)
+;;     (npy-helper-wait))
+;;   (setq inf-buf-a (get-buffer "*Python[Pipenv:project1]*"))
+;;   (npy-helper-log-write "debug2: inf-buf-a: %s" inf-buf-a)
+;;   )
+
+;; (npy-helper-buttercup-setup)
+
+;; (defun npy-helper-buttercup-teardown ()
+;;   "Tear dwon for buttercup testing."
+
+;;   )
+
+(defvar npy-helper-log-file "/tmp/npy.log"
+  "The path to the log file for `npy' testing.")
+
+(defvar npy-helper-log-flag nil
+  "Non-nil means the logging facility is on.")
+(setq npy-helper-log-flag t)
+
+(defun npy-helper-log-write (string &rest objects)
+  "Write STRING to `npy-helper-log-file'.
+
+This function replaces any format specifications in STRING with
+encodings of the corresponding OBJECTS."
+  (when npy-helper-log-flag
+    (write-region (concat "["(current-time-string) "] "
+                          (if objects
+                              (apply #'format string objects)
+                            string)
+                          "\n")
+                  nil npy-helper-log-file t)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here

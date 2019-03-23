@@ -216,7 +216,7 @@
                     (expect npy-buffer-shell-initialized :to-be t)
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer,"
       (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
@@ -234,7 +234,7 @@
                 (expect npy-buffer-shell-initialized :to-be t)
                 (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
                 (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))
-              (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*"))))))
+              (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1;b:buz.py]*"))))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> an inferior python buffer,"
       (it "are, on both buffers, associated with the same Pipenv project."
         (with-npy-sandbox
@@ -252,7 +252,7 @@
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect npy-buffer-child-dedicatable-to :to-be nil))
-              (npy-helper-kill-python-inferior-buffers "*Python*"))))))
+              (npy-helper-kill-inferior-python-buffers "*Python*"))))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a dedicated inferior python buffer,"
       (it "are, on both buffers, associated with the same Pipenv project."
         (with-npy-sandbox
@@ -270,7 +270,7 @@
                 (expect npy-buffer-shell-initialized :to-be nil)
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect npy-buffer-child-dedicatable-to :to-be nil))
-              (npy-helper-kill-python-inferior-buffers "*Python[buz.py]*"))))))
+              (npy-helper-kill-inferior-python-buffers "*Python[buz.py]*"))))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated Python scratch buffer,"
       (it "are, on both buffers,  associated with the same Pipenv project."
         (with-npy-sandbox
@@ -324,7 +324,7 @@
                   (expect npy-buffer-shell-initialized :to-be t)
                   (expect npy-buffer-dedicated-to :to-be nil)
                   (expect npy-buffer-child-dedicatable-to :to-be nil)))
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1]*")))))
     (describe "a dired-mode buffer visiting a directory in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer,"
       (it "npy-run-python throws an error."
         (with-npy-sandbox
@@ -376,7 +376,7 @@
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv dedicated inferior python buffer."
       (it "are, on the inferior buffer, associated with the Pipenv project."
         (with-npy-sandbox
@@ -398,7 +398,7 @@
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
       (it "is, on the inferior buffer, associated with the Pipenv project."
         (with-npy-sandbox
@@ -420,7 +420,7 @@
                     (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
                     (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated scratch buffer for Python -> a virtualenv-buffer dedicated inferior python buffer."
       (it "are, on the inferior buffer, associated with the Pipenv project."
         (unwind-protect
@@ -452,7 +452,7 @@
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv dedicated Python scratch buffer,"
       (it "are, on the scratch buffer, associated with the Pipenv project."
         (with-npy-sandbox
@@ -474,7 +474,7 @@
                     (expect npy-buffer-dedicated-to :to-be nil)
                     (expect npy-buffer-child-dedicatable-to :to-be nil))))
             (kill-buffer "*pyscratch[Pipenv:project1]*")
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv-buffer dedicated inferior python buffer -> a virtualenv-buffer dedicated Python scratch buffer,"
       (it "are, on the scratch buffer, associated with the Pipenv project."
         (with-npy-sandbox
@@ -496,7 +496,7 @@
                     (expect npy-buffer-dedicated-to :to-be (get-buffer "buz.py"))
                     (expect npy-buffer-child-dedicatable-to :to-be (get-buffer "buz.py")))))
             (kill-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1;b:buz.py]*")))))
     (describe "a python-mode buffer visiting a file in a Pipenv project -> a virtualenv dedicated inferior python buffer -> a virtualenv-buffer dedicated Python scratch buffer,"
       (it "npy-scratch throws an error."
         (with-npy-sandbox
@@ -508,7 +508,7 @@
                     (npy-helper-wait))
                   (with-current-buffer "*Python[Pipenv:project1]*"
                     (expect (npy-scratch t) :to-throw 'error))))
-            (npy-helper-kill-python-inferior-buffers "*Python[Pipenv:project1]*")))))))
+            (npy-helper-kill-inferior-python-buffers "*Python[Pipenv:project1]*")))))))
 
 (provide 'npy-env-test)
 ;;; npy-env-test.el ends here

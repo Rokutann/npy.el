@@ -24,9 +24,37 @@
 
 ;;; Code:
 (describe "dispatch feature:"
-  (describe "when there is only one virtualenv dedicated inferior python buffer (inf-buf-a) spawned on a buffer (buf-a) in a Pipenv project (pipenv-a):"
+  (xdescribe "when there is only one virtualenv dedicated inferior python buffer (inf-buf-a) spawned on a buffer (buf-a) in a Pipenv project (pipenv-a):"
+    :var (buf-a inf-buf-a (filespec '(("project1/foo.py" . "VAR1 = 1"))))
+    (before-all
+      (condition-case nil
+          (progn
+            (npy-helper-create-files npy-test/playground-path filespec)
+            (@-find-file "foo.py")
+            (setq buf-a (get-buffer "foo.py"))
+            (message "debug: buf-a: %s" buf-a)
+            (message "debug: cb: %s" (current-buffer))
+            (set-buffer buf-a)
+            (message "debug: inf-buf-a: %s" inf-buf-a)
+            (npy-run-python)
+            (npy-helper-wait)
+            (set-buffer "*scratch*")
+            (message "debug: cb2: %s" (current-buffer))
+            (setq inf-buf-a (get-buffer "*Python[Pipenv:project1]*"))
+            (message "debug2: inf-buf-a: %s" inf-buf-a))
+        ((debug error) (message "Debug: error happend."))
+        )
+      )
+    (after-all
+      (message "debug: after-all called.")
+      (npy-helper-kill-python-buffer buf-a inf-buf-a)
+      (npy-helper-delete-files npy-test/playground-path filespec))
     (describe "from python-mode buffers:"
-      (describe "buf-a.")
+      (describe "from buf-a,"
+        (it "dispatches a code chunk to inf-buf-a."
+          (set-buffer buf-a)
+          (python-shell-send-buffer)
+          (should-response-match inf-buf-a "print(VAR1)\n" "1")))
       (describe "another python-mode buffer in pipenv-a.")
       (describe "a python-mode buffer in a different Pipenv project.")
       (describe "a python-mode buffer not in a Pipenv project."))

@@ -40,13 +40,13 @@
 (setq-default exec-path-from-shell-arguments nil)
 (exec-path-from-shell-initialize)
 
-(defvar npy-test/test-path
-  (directory-file-name (file-name-directory load-file-name))
-  "Path to tests directory.")
+;; (defvar npy-test/test-path
+;;   (directory-file-name (file-name-directory load-file-name))
+;;   "Path to tests directory.")
 
-(defvar npy-test/root-path
-  (directory-file-name (f-dirname (file-name-directory npy-test/test-path)))
-  "Path to root directory.")
+;; (defvar npy-test/root-path
+;;   (directory-file-name (f-dirname (file-name-directory npy-test/test-path)))
+;;   "Path to root directory.")
 
 (defvar npy-test/playground-path
   "/tmp/npy-playground/"

@@ -50,7 +50,7 @@
           (npy-helper-wait)
           (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1]*")))
             (should-not (eq  python-inf-buf nil))
-            (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf)))))
     (it "- spawns a virrualenv dedicated inferior python buffer
     whose sys.path contans the virtualenv root of the Pipenv
     project."
@@ -64,7 +64,7 @@
             (should-not (eq  python-inf-buf nil))
             (should-response-match python-inf-buf
               "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
-            (npy-helper-kill-python-inferior-buffers python-inf-buf))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf))))))
   (describe "when called on a python-mode buffer visiting a file
   in a Pipenv project with `dedicated' set to t,"
     (it "- spawns a virrualenv-buffer dedicated inferior python
@@ -78,7 +78,7 @@
           (npy-helper-wait)
           (let ((python-inf-buf (get-buffer "*Python[Pipenv:project1;b:buz.py]*")))
             (should-not (eq  python-inf-buf nil))
-            (npy-helper-kill-python-inferior-buffers python-inf-buf)))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf)))))
     (it "- spawns a virrualenv-buffer dedicated inferior python
     buffer whose sys.path contans the virtualenv root."
       (with-files-in-playground (("project1/buz.py" . "VAR = 1")
@@ -95,7 +95,7 @@
               "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project1)
             (should-response-match python-inf-buf-2
               "import sys\nprint(sys.path)\n" npy-test/venv-root-for-project2)
-            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf-1 python-inf-buf-2)))))))
 
 (describe "python-shell-send-buffer"
   (describe "when there are a python-mode buffer visiting a file
@@ -113,7 +113,7 @@
                 (python-shell-send-buffer))
               (should-response-match python-inf-buf
                 "print(VAR)\n" "from buz.py")
-              (npy-helper-kill-python-inferior-buffers python-inf-buf)))))))
+              (npy-helper-kill-inferior-python-buffers python-inf-buf)))))))
   (describe "when there are two python-mode buffers: buffer-1 is
   visiting a file in a Pipenv project, and buffer-2 is visiting a
   file not in a Pipenv project, and there are two inferior python
@@ -139,7 +139,7 @@
               "print(VAR)\n" "from buz.py")
             (should-response-match python-inf-buf-2
               "print(VAR)\n" "from foo.py")
-            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf-1 python-inf-buf-2))))))
   (describe "when there are two python-mode buffers: buffer-1 is
   visiting a file in a Pipenv project, and buffer-2 is visiting a
   different file in the same Pipenv project, and there are two
@@ -167,7 +167,7 @@
               "print(VAR)\n" "from buz.py")
             (should-response-match python-inf-buf-2
               "print(VAR)\n" "from foo.py")
-            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf-1 python-inf-buf-2)))))))
 
 (describe "python-shell-send-buffer"
   (describe "when there are two virtualenv-dedicated inferior
@@ -193,7 +193,7 @@
               "print(VAR)\n" "from buz.py")
             (should-response-match python-inf-buf-2
               "print(VAR)\n" "from foo.py")
-            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf-1 python-inf-buf-2))))))
   (describe "when there are two virtualenv-dedicated inferior
   python buffers: inf-buf-1 is spawned on project1/buz.py and
   inf-buf-2 is spawned on project2/foo.py,"
@@ -221,7 +221,7 @@
               (python-shell-send-buffer))
             (should-response-match python-inf-buf-2
               "print(VAR2)\n" "from bar.py")
-            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf-1 python-inf-buf-2))))))
   (describe "when there are two virtualenv-buffer dedicated
   python inferior buffers: inf-buf-1 is spawned on
   project1/buz.py and inf-buf-2 is spawned on project1/foo.py,"
@@ -245,7 +245,7 @@
               "print(VAR)\n" "from buz.py")
             (should-response-match python-inf-buf-2
               "print(VAR)\n" "from foo.py")
-            (npy-helper-kill-python-inferior-buffers python-inf-buf-1 python-inf-buf-2)))))))
+            (npy-helper-kill-inferior-python-buffers python-inf-buf-1 python-inf-buf-2)))))))
 
 (provide 'npy-integration-additional-test)
 ;;; npy-integration-additional-test.el ends here
