@@ -30,7 +30,7 @@
       (condition-case nil
           (progn
             (npy-helper-create-files npy-test/playground-path filespec)
-            (@-find-file "foo.py")
+            (npy-helper-find-file-in-playground "foo.py")
             (setq buf-a (get-buffer "foo.py"))
             (message "debug: buf-a: %s" buf-a)
             (message "debug: cb: %s" (current-buffer))
@@ -141,7 +141,7 @@
       (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
         (with-file-buffers ("project1/buz.py")
           (set-buffer "buz.py")
-          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (npy-helper-in-playground "project1")))
           (npy-scratch)
           (npy-run-python)
           (npy-helper-wait)
@@ -160,7 +160,7 @@
       (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
         (with-file-buffers ("project1/buz.py")
           (set-buffer "buz.py")
-          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (npy-helper-in-playground "project1")))
           (npy-run-python)
           (npy-helper-wait)
           (let-to-kill ((inf-buf (get-buffer "*Python[Pipenv:project1]*")))
@@ -182,7 +182,7 @@
       (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
         (with-file-buffers ("project1/buz.py")
           (set-buffer "buz.py")
-          (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+          (should (equal (gpc-val 'pipenv-project-root npy-env) (npy-helper-in-playground "project1")))
           (npy-scratch)
           (let-to-kill ((scratch-buf (get-buffer "*pyscratch[Pipenv:project1]*")))
             (with-current-buffer scratch-buf
@@ -201,7 +201,7 @@
         (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
           (with-file-buffers ("project1/buz.py")
             (set-buffer "buz.py")
-            (should (equal (gpc-val 'pipenv-project-root npy-env) (@- "project1")))
+            (should (equal (gpc-val 'pipenv-project-root npy-env) (npy-helper-in-playground "project1")))
             (npy-scratch t)
             (let-to-kill ((scratch-buf (get-buffer "*pyscratch[Pipenv:project1;b:buz.py]*")))
               (with-current-buffer scratch-buf

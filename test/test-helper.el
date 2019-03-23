@@ -91,7 +91,7 @@ pair is the content for that file."
         (buffer (cl-gensym "buffer-")))
     `(let ((,buffers nil))
        (dolist (,file ',files)
-         (push (@-find-file ,file) ,buffers))
+         (push (npy-helper-find-file-in-playground ,file) ,buffers))
        (unwind-protect
            (progn
              ,@body)
@@ -99,11 +99,11 @@ pair is the content for that file."
            (when (buffer-live-p ,buffer)
              (kill-buffer ,buffer)))))))
 
-(defmacro @-find-file (filename)
+(defmacro npy-helper-find-file-in-playground (filename)
   "Edit file FILENAME."
   `(find-file-noselect (concat npy-test/playground-path ,filename) nil nil))
 
-(defmacro @- (&rest sequences)
+(defmacro npy-helper-in-playground (&rest sequences)
   "Concatenate all the arguments and make the result a string."
   `(concat npy-test/playground-path ,@sequences))
 
@@ -183,7 +183,7 @@ pair is the content for that file."
 ;; (defun npy-helper-buttercup-setup ()
 ;;   "Set up for buttercup testing."
 ;;   (npy-helper-create-files "/tmp/npy-playground/" filespec)
-;;   (setq buf-a (@-find-file "project1/foo.py"))
+;;   (setq buf-a (npy-helper-find-file-in-playground "project1/foo.py"))
 ;;   (npy-helper-log-write "debug: buf-a: %s" buf-a)
 ;;   (with-current-buffer buf-a
 ;;     (npy-run-python)

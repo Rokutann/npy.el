@@ -46,7 +46,7 @@
           (with-files-in-playground (("project1/buz.py" . "VAR = 1"))
             (with-file-buffers ("project1/buz.py")
               (with-current-buffer "buz.py"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -59,7 +59,7 @@
           (with-files-in-playground (("project2/deep/in/the/project/buz.py" . "VAR = 1"))
             (with-file-buffers ("project2/deep/in/the/project/buz.py")
               (with-current-buffer "buz.py"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project2"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project2"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project2")
                 (expect (gpc-fetch 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2)
                 ;; THINKME: Pipenv has PIPENV_MAX_DEPTH defalut to 3...
@@ -74,7 +74,7 @@
           (with-files-in-playground (("project1/Makefile" . "test-doctest:\n\tpytest --doctest-modules .\n"))
             (with-file-buffers ("project1/Makefile")
               (with-current-buffer "Makefile"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -87,7 +87,7 @@
         (with-npy-sandbox
           (with-file-buffers ("project1")
             (with-current-buffer "project1"
-              (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+              (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
               (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
               (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
               (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -99,7 +99,7 @@
         (with-npy-sandbox
           (with-file-buffers ("project2/deep/in/the/project")
             (with-current-buffer "project"
-              (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project2"))
+              (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project2"))
               (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project2")
               (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2)
               ;; THINKME: Pipenv has PIPENV_MAX_DEPTH defalut to 3...
@@ -157,7 +157,7 @@
                                      ("project1/foo.py" . "VAR = 2"))
             (with-file-buffers ("project1/buz.py" "project1/foo.py")
               (with-current-buffer "buz.py"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -166,7 +166,7 @@
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "buz.py"))
               (with-current-buffer "foo.py"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -181,7 +181,7 @@
                                      ("project2/foo.py" . "VAR = 2"))
             (with-file-buffers ("project1/buz.py" "project2/foo.py")
               (with-current-buffer "buz.py"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -190,7 +190,7 @@
                 (expect npy-buffer-dedicated-to :to-be nil)
                 (expect (buffer-name npy-buffer-child-dedicatable-to) :to-equal "buz.py"))
               (with-current-buffer "foo.py"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project2"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project2"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project2")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project2)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project2)
@@ -208,7 +208,7 @@
                     (npy-run-python)
                     (npy-helper-wait))
                   (with-current-buffer "*Python[Pipenv:project1]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -226,7 +226,7 @@
                 (npy-run-python t)
                 (npy-helper-wait))
               (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -244,7 +244,7 @@
                 (run-python)
                 (npy-helper-wait))
               (with-current-buffer "*Python*"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-be nil)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -262,7 +262,7 @@
                 (run-python (python-shell-calculate-command) t)
                 (npy-helper-wait))
               (with-current-buffer "*Python[buz.py]*"
-                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                 (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                 (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-be nil)
                 (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -280,7 +280,7 @@
                   (with-current-buffer "buz.py"
                     (npy-scratch))
                   (with-current-buffer "*pyscratch[Pipenv:project1]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -298,7 +298,7 @@
                   (with-current-buffer "buz.py"
                     (npy-scratch t))
                   (with-current-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -316,7 +316,7 @@
                   (npy-run-python)
                   (npy-helper-wait))
                 (with-current-buffer "*Python[Pipenv:project1]*"
-                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                   (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                   (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                   (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -339,7 +339,7 @@
                 (with-current-buffer "project1"
                   (npy-scratch))
                 (with-current-buffer "*pyscratch[Pipenv:project1]*"
-                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                  (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                   (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                   (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                   (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -367,7 +367,7 @@
                     (npy-run-python)
                     (npy-helper-wait))
                   (with-current-buffer "*Python[Pipenv:project1]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -389,7 +389,7 @@
                     (npy-run-python)
                     (npy-helper-wait))
                   (with-current-buffer "*Python[Pipenv:project1]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -411,7 +411,7 @@
                     (npy-run-python t)
                     (npy-helper-wait))
                   (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -443,7 +443,7 @@
                   (with-current-buffer "*Python[Pipenv:project1]*"
                     (npy-scratch))
                   (with-current-buffer "*pyscratch[Pipenv:project1]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -465,7 +465,7 @@
                   (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
                     (npy-scratch))
                   (with-current-buffer "*pyscratch[Pipenv:project1]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
@@ -487,7 +487,7 @@
                   (with-current-buffer "*Python[Pipenv:project1;b:buz.py]*"
                     (npy-scratch t))
                   (with-current-buffer "*pyscratch[Pipenv:project1;b:buz.py]*"
-                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (@- "project1"))
+                    (expect (gpc-val 'pipenv-project-root npy-env) :to-equal (npy-helper-in-playground "project1"))
                     (expect (gpc-val 'pipenv-project-name npy-env) :to-equal "project1")
                     (expect (gpc-val 'pipenv-virtualenv-root npy-env) :to-equal npy-test/venv-root-for-project1)
                     (expect python-shell-virtualenv-root :to-equal npy-test/venv-root-for-project1)
