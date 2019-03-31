@@ -23,9 +23,32 @@
 ;; Tests for npy dispatching feature.
 
 ;;; Code:
+
+;; (setq npy-test/playground-path "/tmp/npy-playground/")
+;; (setq filespec '(("pipenv-a/file-a.py" . "VAR1 = 1")))
+
+(defun npy-helper-dispatch-feature-setup ()
+  "Set up for dispatch feature testing."
+  (npy-helper-create-files npy-test/playground-path filespec)
+  (setq buf-a (npy-helper-find-file-in-playground "pipenv-a/file-a.py"))
+  (npy-helper-log-write "debug: buf-a: %s" buf-a)
+  (with-current-buffer buf-a
+    (npy-run-python)
+    (npy-helper-wait))
+  (setq inf-buf-a (get-buffer "*Python[Pipenv:pipenv-a]*"))
+  (npy-helper-log-write "debug: inf-buf-a: %s" inf-buf-a))
+
+;; (npy-helper-dispatch-feature-setup)
+
+(defun npy-helper-dispatch-feature-teardown ()
+  "Tear dwon for dispatch feature testing."
+  (npy-helper-kill-inferior-python-buffers inf-buf-a)
+  (npy-helper-kill-pythonic-buffer buf-a)
+  )
+
 (describe "dispatch feature:"
   (xdescribe "when there is only one virtualenv dedicated inferior python buffer (inf-buf-a) spawned on a buffer (buf-a) in a Pipenv project (pipenv-a):"
-    :var (buf-a inf-buf-a (filespec '(("project1/foo.py" . "VAR1 = 1"))))
+    :var (buf-a inf-buf-a (filespec '(("pipenv-a/file-a.py" . "VAR1 = 1"))))
     (before-all
       (condition-case nil
           (progn
@@ -47,7 +70,7 @@
       )
     (after-all
       (message "debug: after-all called.")
-      (npy-helper-kill-python-buffer buf-a inf-buf-a)
+      (npy-helper-kill-pythonic-buffer buf-a inf-buf-a)
       (npy-helper-delete-files npy-test/playground-path filespec))
     (describe "from python-mode buffers:"
       (describe "from buf-a,"

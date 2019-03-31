@@ -58,6 +58,24 @@ pair is the content for that file."
                  (file-exists-p fullname))
         (delete-file fullname)))))
 
+(defmacro with-files-in-playground (filespec &rest body)
+  "Execute BODY in the playground specified by FILESPEC."
+  (declare (indent 1))
+  `(unwind-protect
+       (progn
+         (npy-helper-create-files npy-test/playground-path
+                                  ',filespec)
+         ,@body)
+     (npy-helper-delete-files npy-test/playground-path ',filespec)))
+
+(defmacro npy-helper-in-playground (&rest sequences)
+  "Concatenate all SEQUENCES with trailing `npy-test/playground-path' and return it."
+  `(concat npy-test/playground-path ,@sequences))
+
+(defmacro npy-helper-find-file-in-playground (filename)
+  "Create a buffer visiting file FILENAME in `npy-test/playground-path'."
+  `(find-file-noselect (concat npy-test/playground-path ,filename) nil nil))
+
 (defmacro with-npy-sandbox (&rest body)
   "Clear up npy related variables before and after execute BODY."
   (declare (indent 0))
@@ -72,16 +90,6 @@ pair is the content for that file."
      (gpc-pool-clear 'pipenv-non-project-dirs npy-env)
      (gpc-pool-clear 'pip-known-projects npy-env)
      (gpc-pool-clear 'pip-non-project-dirs npy-env)))
-
-(defmacro with-files-in-playground (filespec &rest body)
-  "Execute BODY in the playground specified by FILESPEC."
-  (declare (indent 1))
-  `(unwind-protect
-       (progn
-         (npy-helper-create-files npy-test/playground-path
-                                  ',filespec)
-         ,@body)
-     (npy-helper-delete-files npy-test/playground-path ',filespec)))
 
 (defmacro with-file-buffers (files &rest body)
   "Execute BODY after creating buffers visiting FILES."
@@ -99,43 +107,17 @@ pair is the content for that file."
            (when (buffer-live-p ,buffer)
              (kill-buffer ,buffer)))))))
 
-(defmacro npy-helper-find-file-in-playground (filename)
-  "Edit file FILENAME."
-  `(find-file-noselect (concat npy-test/playground-path ,filename) nil nil))
-
-(defmacro npy-helper-in-playground (&rest sequences)
-  "Concatenate all the arguments and make the result a string."
-  `(concat npy-test/playground-path ,@sequences))
-
 (defun npy-helper-wait ()
   "Wait the Python interpreter."
   (sleep-for npy-test/python-wait))
 
-(defmacro npy-helper-kill-inferior-python-buffers (&rest buffer-or-names)
-  "Kill all of BUFFER-OR-NAMES, which are bound to Python inferior processes."
-  (declare (indent 0))
-  `(progn
-     ,@(mapcar (lambda (buffer-or-name)
-                 `(with-current-buffer ,buffer-or-name
-                    (python-shell-send-string "quit()\n")
-                    (npy-helper-wait)
-                    (kill-buffer ,buffer-or-name)))
-               buffer-or-names)))
-
 (defvar npy-test/match-flag nil
   "Non-nil means there was at least one successful match.")
 
-(defun npy-helper-match-filter (proc string)
-  "Check if outputs of PROC containg STRING."
-  (when (s-matches-p npy-test/venv-root-for-project1 string)
-    (setq npy-test/match-flag t)))
-
 (defun npy-helper-match-filter (regex string)
-  "Check if outputs of PROC containg STRING."
-  ;;  (write-region (format "string:%s\n" string) nil "/tmp/npy.log" t)
+  "Set `npy-test/match-flag' t if REGEX matches STRING, otherwise nil."
   (message "Python response: %s" string)
   (when (s-matches-p regex string)
-    ;;    (write-region (format "%s" string) nil "/tmp/npy.log" t)
     (setq npy-test/match-flag t)))
 
 (defmacro should-response-match (buffer python-command regex)
@@ -162,9 +144,32 @@ pair is the content for that file."
   `(let ,buffer-bindings
      (unwind-protect
          ,@body
-       ,@(mapcar '(lambda (binding) `(npy-helper-kill-python-buffer ,(car binding))) buffer-bindings))))
+       ,@(mapcar #'(lambda (binding) `(npy-helper-kill-pythonic-buffer ,(car binding))) buffer-bindings))))
 
-(defun npy-helper-kill-python-buffer (buffer)
+(defun npy-helper-kill-inferior-python-buffer (inferior-buffer)
+  "Kill INFERIOR-BUFFER, which is an inferior python buffer."
+  (with-current-buffer inferior-buffer
+    (python-shell-send-string "quit()\n")
+    (npy-helper-wait)
+    (kill-buffer inferior-buffer)))
+
+(defun npy-helper-kill-python-buffer (python-buffer)
+  "Kill PYTHON-BUFFER, which is a `python-mode' buffer."
+  (with-current-buffer python-buffer
+    (kill-buffer)))
+
+(defmacro npy-helper-kill-inferior-python-buffers (&rest buffer-or-names)
+  "Kill all of BUFFER-OR-NAMES, which are bound to Python inferior processes."
+  (declare (indent 0))
+  `(progn
+     ,@(mapcar #'(lambda (buffer-or-name)
+                   `(with-current-buffer ,buffer-or-name
+                      (python-shell-send-string "quit()\n")
+                      (npy-helper-wait)
+                      (kill-buffer ,buffer-or-name)))
+               buffer-or-names)))
+
+(defun npy-helper-kill-pythonic-buffer (buffer)
   "Kill a `python-mode' or `inferior-python-mode' BUFFER."
   (when (buffer-live-p buffer)
     (with-current-buffer buffer
@@ -172,32 +177,9 @@ pair is the content for that file."
           (npy-helper-kill-inferior-python-buffers buffer)
         (kill-buffer)))))
 
-
 (defun npy-helper-write (string buffer)
   "Write STRING out to BUFFER."
   (mapc #'(lambda (char) (write-char char buffer)) string))
-
-;; (setq filespec '(("project1/foo.py" . "VAR1 = 1")))
-;; (setq npy-test/playground-path "/tmp/npy-playground/")
-
-;; (defun npy-helper-buttercup-setup ()
-;;   "Set up for buttercup testing."
-;;   (npy-helper-create-files "/tmp/npy-playground/" filespec)
-;;   (setq buf-a (npy-helper-find-file-in-playground "project1/foo.py"))
-;;   (npy-helper-log-write "debug: buf-a: %s" buf-a)
-;;   (with-current-buffer buf-a
-;;     (npy-run-python)
-;;     (npy-helper-wait))
-;;   (setq inf-buf-a (get-buffer "*Python[Pipenv:project1]*"))
-;;   (npy-helper-log-write "debug2: inf-buf-a: %s" inf-buf-a)
-;;   )
-
-;; (npy-helper-buttercup-setup)
-
-;; (defun npy-helper-buttercup-teardown ()
-;;   "Tear dwon for buttercup testing."
-
-;;   )
 
 (defvar npy-helper-log-file "/tmp/npy.log"
   "The path to the log file for `npy' testing.")

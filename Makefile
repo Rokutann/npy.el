@@ -25,6 +25,9 @@ npy-env:
 npy-dispatch-feature:
 	$(CASK) exec buttercup test/npy-dispatch-feature -L . -l test/test-helper.el -l test/npy-buttercup-init.el
 
+npy-helper:
+	$(CASK) exec buttercup test/npy-helper -L . -l test/test-helper.el -l test/npy-buttercup-init.el
+
 compile:
 	${CASK} exec ${EMACS} -Q -batch -f batch-byte-compile npy.el
 
