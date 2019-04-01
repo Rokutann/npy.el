@@ -146,12 +146,12 @@ pair is the content for that file."
          ,@body
        ,@(mapcar #'(lambda (binding) `(npy-helper-kill-pythonic-buffer ,(car binding))) buffer-bindings))))
 
-(defun npy-helper-kill-inferior-python-buffer (inferior-buffer)
-  "Kill INFERIOR-BUFFER, which is an inferior python buffer."
-  (with-current-buffer inferior-buffer
+(defun npy-helper-kill-inferior-python-buffer (inferior-python-buffer)
+  "Kill INFERIOR-PYTHON-BUFFER."
+  (with-current-buffer inferior-python-buffer
     (python-shell-send-string "quit()\n")
     (npy-helper-wait)
-    (kill-buffer inferior-buffer)))
+    (kill-buffer inferior-python-buffer)))
 
 (defun npy-helper-kill-python-buffer (python-buffer)
   "Kill PYTHON-BUFFER, which is a `python-mode' buffer."
@@ -161,13 +161,16 @@ pair is the content for that file."
 (defmacro npy-helper-kill-inferior-python-buffers (&rest buffer-or-names)
   "Kill all of BUFFER-OR-NAMES, which are bound to Python inferior processes."
   (declare (indent 0))
-  `(progn
-     ,@(mapcar #'(lambda (buffer-or-name)
-                   `(with-current-buffer ,buffer-or-name
-                      (python-shell-send-string "quit()\n")
-                      (npy-helper-wait)
-                      (kill-buffer ,buffer-or-name)))
-               buffer-or-names)))
+  (let ((ebuf (cl-gensym "buf-")))
+    `(progn
+       ,@(mapcar #'(lambda (buffer-or-name)
+                     `(let ((,ebuf (get-buffer ,buffer-or-name)))
+                        (when (buffer-live-p ,ebuf)
+                          (with-current-buffer ,ebuf
+                            (python-shell-send-string "quit()\n")
+                            (npy-helper-wait)
+                            (kill-buffer ,ebuf)))))
+                 buffer-or-names))))
 
 (defun npy-helper-kill-pythonic-buffer (buffer)
   "Kill a `python-mode' or `inferior-python-mode' BUFFER."
@@ -180,6 +183,14 @@ pair is the content for that file."
 (defun npy-helper-write (string buffer)
   "Write STRING out to BUFFER."
   (mapc #'(lambda (char) (write-char char buffer)) string))
+
+(defun npy-helper-file-string (path)
+  "Reed the file at PATH and return the content as a string."
+  (let ((file-buffer (find-file-noselect path)))
+    (with-current-buffer file-buffer
+      (prog1
+          (buffer-string)
+        (kill-buffer)))))
 
 (defvar npy-helper-log-file "/tmp/npy.log"
   "The path to the log file for `npy' testing.")

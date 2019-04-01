@@ -30,14 +30,6 @@
   "/tmp/npy-helper-test"
   "The root directory of npy helper tests.")
 
-(defun npy-helper-file-string (path)
-  "Reed the file at PATH and return the content as a string."
-  (let ((file-buffer (find-file-noselect path)))
-    (with-current-buffer file-buffer
-      (prog1
-          (buffer-string)
-        (kill-buffer)))))
-
 (describe "npy-helper-file-string"
   (it "returns the content of a file."
     (call-process-shell-command (format "mkdir -p %s" npy-helper-test-root))
@@ -136,6 +128,18 @@
       (expect (with-current-buffer buf (derived-mode-p 'dired-mode)) :not :to-be nil)
       (npy-helper-kill-python-buffer buf))))
 
+(describe "npy-helper-kill-inferior-python-buffer"
+  (it "kills an inferior python buffer without asking if you really want to kill a buffer with a process."
+    (run-python)
+    (npy-helper-wait)
+    (expect (cl-some #'(lambda (b)
+                         (string= (buffer-name b) "*Python*"))
+                     (buffer-list)) :to-be-truthy)
+    (npy-helper-kill-inferior-python-buffer "*Python*")
+    (expect (cl-some #'(lambda (b)
+                         (string= (buffer-name b) "*Python*"))
+                     (buffer-list)) :not :to-be-truthy)))
+
 (describe "npy-helper-kill-inferior-python-buffers"
   (it "kills an inferior python buffer without asking if you really want to kill a buffer with a process."
     (run-python)
@@ -169,7 +173,62 @@
                            (string= (buffer-name b) "*Python[file-b.py]*"))
                        (buffer-list)) :not :to-be-truthy)
       (npy-helper-kill-python-buffer py-buf-a)
-      (npy-helper-kill-python-buffer py-buf-b))))
+      (npy-helper-kill-python-buffer py-buf-b)))
+  (it "ignores a dead buffer."
+    (run-python)
+    (npy-helper-wait)
+    (let ((buf (get-buffer "*Python*")))
+      (expect (cl-some #'(lambda (b)
+                           (string= (buffer-name b) "*Python*"))
+                       (buffer-list)) :to-be-truthy)
+      (npy-helper-kill-inferior-python-buffers buf)
+      (expect (cl-some #'(lambda (b)
+                           (string= (buffer-name b) "*Python*"))
+                       (buffer-list)) :not :to-be-truthy)
+      (expect (buffer-live-p buf) :not :to-be-truthy)
+      (expect (npy-helper-kill-inferior-python-buffers buf) :not :to-throw))))
+
+(describe "npy-helper-kill-pythonic-buffer"
+  (it "kills an inferior python buffer without asking if you really want to kill a buffer with a process."
+    (run-python)
+    (npy-helper-wait)
+    (expect (cl-some #'(lambda (b)
+                         (string= (buffer-name b) "*Python*"))
+                     (buffer-list)) :to-be-truthy)
+    (npy-helper-kill-pythonic-buffer (get-buffer "*Python*"))
+    (expect (cl-some #'(lambda (b)
+                         (string= (buffer-name b) "*Python*"))
+                     (buffer-list)) :not :to-be-truthy))
+  (it "kills a `python-mode' buffer."
+    (let ((buf (find-file-noselect (format "%s/file-a.py" npy-helper-test-root))))
+      (expect (cl-some #'(lambda (b)
+                           (string= (buffer-file-name b)
+                                    (format "%s/file-a.py" npy-helper-test-root)))
+                       (buffer-list))
+              :to-be-truthy)
+      (npy-helper-kill-pythonic-buffer buf)
+      (expect (cl-some #'(lambda (b)
+                           (string= (buffer-file-name b)
+                                    (format "%s/file-a.py" npy-test/playground-path)))
+                       (buffer-list))
+              :not :to-be-truthy))))
+
+(describe "npy-helper-file-string"
+  (it "reads the desinated file and returns its contetent as a string."
+    (with-files-in-playground ("file-a.py" ("file-b.py" . "123"))
+      (expect (npy-helper-file-string (npy-helper-in-playground "file-a.py"))
+              :to-equal "")
+      (expect (npy-helper-file-string (npy-helper-in-playground "file-b.py"))
+              :to-equal "123")
+      )))
+
+(describe "npy-helper-write"
+  (it "inserts a string in a buffer."
+    (let ((py-buf (npy-helper-find-file-in-playground "file.py")))
+      (expect (with-current-buffer py-buf (buffer-string)) :to-equal "")
+      (npy-helper-write "import sys\n" py-buf)
+      (expect (with-current-buffer py-buf (buffer-string)) :to-equal "import sys\n")
+      (kill-buffer py-buf))))
 
 (provide 'npy-helper-test)
 ;;; npy-helper-test.el ends here
